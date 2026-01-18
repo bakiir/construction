@@ -29,5 +29,4 @@ public class SubObject {
     @OneToMany(mappedBy = "subObject", fetch = FetchType.LAZY)
     private List<Task> tasks;
 
-
 }

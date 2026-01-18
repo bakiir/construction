@@ -32,7 +32,7 @@ public class Project {
     private LocalDate deadline;
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
-    private List<Object> objects;
+    private List<ConstructionObject> constructionObjects;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 

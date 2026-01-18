@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "c_objects")
-public class Object {
+public class ConstructionObject {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,7 +30,5 @@ public class Object {
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = null;
-
-
 
 }

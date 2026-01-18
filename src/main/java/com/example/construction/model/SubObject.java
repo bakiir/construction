@@ -21,7 +21,7 @@ public class SubObject {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "object_id", nullable = false)
-    private Object object;
+    private ConstructionObject constructionObject;
 
     private String name;
 

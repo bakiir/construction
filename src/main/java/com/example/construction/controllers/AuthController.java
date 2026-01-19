@@ -2,8 +2,11 @@ package com.example.construction.controllers;
 
 import com.example.construction.dto.LoginRequest;
 import com.example.construction.dto.LoginResponse;
+import com.example.construction.dto.UserCreateDto;
 import com.example.construction.service.JwtService;
+import com.example.construction.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,6 +23,7 @@ public class AuthController {
 
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
+    private final UserService userService;
 
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
@@ -39,6 +43,13 @@ public class AuthController {
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         return response;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@RequestBody UserCreateDto request) {
+
+         userService.create(request);
+         return ResponseEntity.status(201).build();
     }
 }
 

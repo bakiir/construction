@@ -50,6 +50,12 @@ public class UserService {
                 .toList();
     }
 
+    public Long getUserIdByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        return user.getId();
+    }
+
     // UPDATE
     public UserDto update(Long id, UserUpdateDto dto) {
         User user = userRepository.findById(id)

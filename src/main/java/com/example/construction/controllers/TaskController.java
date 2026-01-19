@@ -4,33 +4,38 @@ import com.example.construction.dto.TaskCreateDto;
 import com.example.construction.dto.TaskDto;
 import com.example.construction.service.TaskService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/api/tasks")
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TaskService service;
 
     @PostMapping
+    @PreAuthorize("hasRole('ESTIMATOR')")
     public TaskDto create(@RequestBody TaskCreateDto dto) {
         return service.create(dto);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN', 'WORKER')")
     public TaskDto getById(@PathVariable Long id) {
         return service.getById(id);
     }
 
     @GetMapping("/sub-object/{subObjectId}")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN', 'WORKER')")
     public List<TaskDto> getBySubObject(@PathVariable Long subObjectId) {
         return service.getBySubObject(subObjectId);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ESTIMATOR')")
     public TaskDto update(
             @PathVariable Long id,
             @RequestBody TaskCreateDto dto) {
@@ -38,6 +43,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ESTIMATOR')")
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }

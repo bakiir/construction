@@ -5,12 +5,13 @@ import com.example.construction.dto.UserDto;
 import com.example.construction.dto.UserUpdateDto;
 import com.example.construction.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -22,11 +23,13 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ESTIMATOR')")
     public UserDto getById(@PathVariable Long id) {
         return service.getById(id);
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ESTIMATOR')")
     public List<UserDto> getAll() {
         return service.getAll();
     }

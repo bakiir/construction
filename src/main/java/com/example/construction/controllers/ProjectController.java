@@ -3,7 +3,7 @@ package com.example.construction.controllers;
 
 import com.example.construction.dto.ProjectCreateDto;
 import com.example.construction.dto.ProjectDto;
-import com.example.construction.model.Project;
+import com.example.construction.dto.ProjectUpdateDto;
 import com.example.construction.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,7 +39,7 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ESTIMATOR')")
-    public ProjectDto updateProject(@PathVariable Long id, @RequestBody Project project){
+    public ProjectDto updateProject(@PathVariable Long id, @RequestBody ProjectUpdateDto project){
         return projectService.updateProject(project, id);
     }
 

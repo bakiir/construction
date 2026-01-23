@@ -1,5 +1,6 @@
 package com.example.construction.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,6 +33,7 @@ public class Project {
     private LocalDate deadline;
 
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<ConstructionObject> constructionObjects;
 
     private LocalDateTime createdAt = LocalDateTime.now();

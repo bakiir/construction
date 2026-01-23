@@ -55,7 +55,7 @@ public class WorkflowService {
             List<User> pms = userRepository.findAllByRole(Role.PM);
             pms.forEach(pm -> notificationService.createNotification(pm, "Task '" + task.getTitle() + "' has been approved by foreman and is ready for final review."));
 
-        } else if (approverRole == Role.PM && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
+        } else if ((approverRole == Role.PM || approverRole == Role.SUPER_ADMIN) && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
             task.setStatus(TaskStatus.COMPLETED);
             createApprovalRecord(task, approver, "APPROVED", null);
 
@@ -79,7 +79,7 @@ public class WorkflowService {
         Role approverRole = approver.getRole();
 
         if (approverRole == Role.FOREMAN && currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN ||
-            approverRole == Role.PM && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
+            (approverRole == Role.PM || approverRole == Role.SUPER_ADMIN) && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
             
             task.setStatus(TaskStatus.REWORK);
             createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());

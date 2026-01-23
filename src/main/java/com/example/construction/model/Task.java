@@ -1,8 +1,8 @@
 package com.example.construction.model;
 
-
 import com.example.construction.Enums.TaskStatus;
 import com.example.construction.Enums.TaskType;
+import com.example.construction.Enums.Priority;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,7 +27,6 @@ public class Task {
 
     private String title;
 
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskType taskType;
@@ -51,12 +50,11 @@ public class Task {
     private Report report;
 
     @ManyToMany
-    @JoinTable(
-            name = "task_assignees",
-            joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
+    @JoinTable(name = "task_assignees", joinColumns = @JoinColumn(name = "task_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<User> assignees = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    private Priority priority;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = null;

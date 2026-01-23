@@ -16,7 +16,7 @@ public class WorkflowController {
     private final WorkflowService workflowService;
 
     @PostMapping("/tasks/{taskId}/approve")
-    @PreAuthorize("hasAnyRole('FOREMAN', 'PM')")
+    @PreAuthorize("hasAnyRole('FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<Void> approveTask(@PathVariable Long taskId, Authentication authentication) {
         String approverEmail = authentication.getName();
         workflowService.approveTask(taskId, approverEmail);
@@ -24,7 +24,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/tasks/{taskId}/reject")
-    @PreAuthorize("hasAnyRole('FOREMAN', 'PM')")
+    @PreAuthorize("hasAnyRole('FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<Void> rejectTask(
             @PathVariable Long taskId,
             @RequestBody ApprovalDto approvalDto,

@@ -28,6 +28,12 @@ public class TaskController {
         return service.getById(id);
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN', 'WORKER')")
+    public List<TaskDto> getAll() {
+        return service.getAll();
+    }
+
     @GetMapping("/sub-object/{subObjectId}")
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN', 'WORKER')")
     public List<TaskDto> getBySubObject(@PathVariable Long subObjectId) {

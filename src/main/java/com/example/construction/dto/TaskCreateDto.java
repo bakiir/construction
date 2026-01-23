@@ -2,6 +2,7 @@ package com.example.construction.dto;
 
 import com.example.construction.Enums.TaskStatus;
 import com.example.construction.Enums.TaskType;
+import com.example.construction.Enums.Priority;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,6 +22,8 @@ public class TaskCreateDto {
     private LocalDate deadline;
 
     private TaskStatus status;
+
+    private Priority priority;
 
     // связь по ID
     private Long subObjectId;

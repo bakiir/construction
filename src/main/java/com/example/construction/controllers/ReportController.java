@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,12 +23,28 @@ public class ReportController {
     private final ObjectMapper objectMapper;
 
     @PostMapping("/tasks/{taskId}/report")
-    @PreAuthorize("hasRole('WORKER')")
+    // @PreAuthorize("hasRole('WORKER')")
     public ResponseEntity<Void> createReport(
             @PathVariable Long taskId,
             @RequestPart("report") String reportJson,
             @RequestPart("files") List<MultipartFile> files,
             Authentication authentication) {
+
+        System.out.println("DEBUG: createReport called for task " + taskId);
+        if (authentication == null) {
+            System.out.println("DEBUG: Authentication is null");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        System.out.println("DEBUG: User: " + authentication.getName());
+        System.out.println("DEBUG: Authorities: " + authentication.getAuthorities());
+
+        boolean isWorker = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_WORKER"));
+
+        if (!isWorker) {
+            System.out.println("DEBUG: Access Denied. User is not ROLE_WORKER");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         try {
             ReportCreateDto reportDto = objectMapper.readValue(reportJson, ReportCreateDto.class);
@@ -42,8 +58,9 @@ public class ReportController {
             reportService.createReport(taskId, reportDto, files, authorEmail);
 
             return ResponseEntity.status(HttpStatus.CREATED).build();
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             // Log the exception
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

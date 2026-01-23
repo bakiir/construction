@@ -2,11 +2,13 @@ package com.example.construction.service;
 
 import com.example.construction.dto.ProjectCreateDto;
 import com.example.construction.dto.ProjectDto;
+import com.example.construction.dto.ProjectUpdateDto;
 import com.example.construction.mapper.ProjectMapper;
 import com.example.construction.model.Project;
 import com.example.construction.reposirtories.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,8 +45,12 @@ public class ProjectService {
 
     }
 
-    public ProjectDto updateProject(Project project, Long id){
-        project.setId(id);
+    @Transactional
+    public ProjectDto updateProject(ProjectUpdateDto projectUpdateDto, Long id){
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+        projectMapper.updateEntityFromDto(projectUpdateDto, project);
+        project.setUpdatedAt(LocalDateTime.now());
         Project updatedProject = projectRepository.save(project);
         return projectMapper.toDto(updatedProject);
     }

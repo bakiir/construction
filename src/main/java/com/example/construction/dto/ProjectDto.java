@@ -1,6 +1,5 @@
 package com.example.construction.dto;
 
-import com.example.construction.model.ConstructionObject;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +20,6 @@ public class ProjectDto {
     private Long createdBy;
     private Long progress;
     private LocalDate deadline;
-    private List<ConstructionObject> constructionObjects; // Можно заменить Object на конкретный DTO, если есть
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

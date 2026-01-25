@@ -6,6 +6,7 @@ import com.example.construction.dto.TaskDto;
 import com.example.construction.mapper.TaskMapper;
 import com.example.construction.model.SubObject;
 import com.example.construction.model.Task;
+import com.example.construction.model.TaskApproval;
 import com.example.construction.reposirtories.SubObjectRepository;
 import com.example.construction.reposirtories.TaskApprovalRepository;
 import com.example.construction.reposirtories.TaskRepository;
@@ -137,8 +138,8 @@ public class TaskService {
 
     private TaskDto toDtoWithRejection(Task task) {
         TaskDto dto = mapper.toDto(task);
-        if (task.getStatus() == TaskStatus.REWORK) {
-            taskApprovalRepository.findTopByTaskIdAndDecisionOrderByCreatedAtDesc(task.getId(), "REJECTED")
+        if (task.getStatus() == TaskStatus.REWORK || task.getStatus() == TaskStatus.UNDER_REVIEW_FOREMAN) {
+            taskApprovalRepository.findTopByTaskAndDecisionOrderByCreatedAtDesc(task, "REJECTED")
                     .ifPresent(approval -> dto.setRejectionReason(approval.getComment()));
         }
         return dto;

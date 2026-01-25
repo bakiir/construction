@@ -36,7 +36,8 @@ public class WorkflowService {
 
         // Notify all foremen
         List<User> foremen = userRepository.findAllByRole(Role.FOREMAN);
-        foremen.forEach(foreman -> notificationService.createNotification(foreman, "Task '" + task.getTitle() + "' is ready for review."));
+        foremen.forEach(foreman -> notificationService.createNotification(foreman,
+                "Task '" + task.getTitle() + "' is ready for review."));
     }
 
     @Transactional
@@ -53,18 +54,22 @@ public class WorkflowService {
 
             // Notify all PMs
             List<User> pms = userRepository.findAllByRole(Role.PM);
-            pms.forEach(pm -> notificationService.createNotification(pm, "Task '" + task.getTitle() + "' has been approved by foreman and is ready for final review."));
+            pms.forEach(pm -> notificationService.createNotification(pm,
+                    "Task '" + task.getTitle() + "' has been approved by foreman and is ready for final review."));
 
-        } else if ((approverRole == Role.PM || approverRole == Role.SUPER_ADMIN) && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
+        } else if ((approverRole == Role.PM || approverRole == Role.SUPER_ADMIN)
+                && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
             task.setStatus(TaskStatus.COMPLETED);
             createApprovalRecord(task, approver, "APPROVED", null);
 
             // Notify assignees
-            task.getAssignees().forEach(assignee -> notificationService.createNotification(assignee, "Task '" + task.getTitle() + "' has been completed."));
+            task.getAssignees().forEach(assignee -> notificationService.createNotification(assignee,
+                    "Task '" + task.getTitle() + "' has been completed."));
 
             activateNextTask(task);
         } else {
-            throw new IllegalStateException("User " + approverEmail + " cannot approve this task at its current status.");
+            throw new IllegalStateException(
+                    "User " + approverEmail + " cannot approve this task at its current status.");
         }
 
         taskRepository.save(task);
@@ -78,18 +83,31 @@ public class WorkflowService {
         TaskStatus currentStatus = task.getStatus();
         Role approverRole = approver.getRole();
 
-        if (approverRole == Role.FOREMAN && currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN ||
-            (approverRole == Role.PM || approverRole == Role.SUPER_ADMIN) && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
-            
+        if (approverRole == Role.FOREMAN && currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN) {
+            // Foreman rejects -> Back to Worker (REWORK)
             task.setStatus(TaskStatus.REWORK);
             createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());
 
-            // Notify assignees
-            String message = "Task '" + task.getTitle() + "' was sent for rework by " + approver.getRole().name() + ". Comment: " + approvalDto.getComment();
+            // Notify assignees (Workers)
+            String message = "Task '" + task.getTitle() + "' was sent for rework by Foreman. Comment: "
+                    + approvalDto.getComment();
             task.getAssignees().forEach(assignee -> notificationService.createNotification(assignee, message));
 
+        } else if ((approverRole == Role.PM || approverRole == Role.SUPER_ADMIN)
+                && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
+            // PM rejects -> Back to Foreman (UNDER_REVIEW_FOREMAN)
+            task.setStatus(TaskStatus.UNDER_REVIEW_FOREMAN);
+            createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());
+
+            // Notify all Foremen
+            String message = "Task '" + task.getTitle() + "' was returned to Foreman by PM. Comment: "
+                    + approvalDto.getComment();
+            List<User> foremen = userRepository.findAllByRole(Role.FOREMAN);
+            foremen.forEach(foreman -> notificationService.createNotification(foreman, message));
+
         } else {
-            throw new IllegalStateException("User " + approverEmail + " cannot reject this task at its current status.");
+            throw new IllegalStateException(
+                    "User " + approverEmail + " cannot reject this task at its current status.");
         }
 
         taskRepository.save(task);

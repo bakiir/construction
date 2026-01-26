@@ -18,10 +18,14 @@ public class ReportPhoto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String filePath;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "stored_file_id", referencedColumnName = "id")
+    private StoredFile storedFile;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "report_id", nullable = false)
     private Report report;
+
+    @Column(name = "file_path")
+    private String filePath;
 }

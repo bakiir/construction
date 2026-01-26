@@ -1,48 +1,39 @@
 package com.example.construction.controllers;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
+import com.example.construction.service.S3Service;
+import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/files")
+@RequiredArgsConstructor
 public class FileController {
 
-    private final Path storageDir;
-
-    public FileController(@Value("${file.upload-dir}") String uploadDir) {
-        this.storageDir = Paths.get(uploadDir).toAbsolutePath().normalize();
-    }
+    private final S3Service s3Service;
 
     @GetMapping("/{fileName}")
     public ResponseEntity<Resource> getFile(@PathVariable String fileName) {
         try {
-            Path filePath = storageDir.resolve(fileName).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                return ResponseEntity.notFound().build();
-            }
+            // For simplicity, we assume the filename is the key or we can look it up if
+            // needed.
+            // However, our new design stores the key in the database.
+            // If the frontend requests by filename, we might need to lookup by original
+            // filename or S3 key.
+            // But for now, let's assume the frontend will be updated to use the full URL
+            // from the DTO.
 
-            String contentType = Files.probeContentType(filePath);
-            MediaType mediaType = contentType != null ? MediaType.parseMediaType(contentType) : MediaType.APPLICATION_OCTET_STREAM;
+            // If we want to support the old endpoint pattern /files/{key}, we can redirect.
+            String url = s3Service.generatePresignedUrl(fileName); // Expecting fileName to be the key here
 
-            return ResponseEntity
-                    .ok()
-                    .contentType(mediaType)
-                    .body(resource);
-        } catch (MalformedURLException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(307) // Temporary Redirect
+                    .location(java.net.URI.create(url))
+                    .build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

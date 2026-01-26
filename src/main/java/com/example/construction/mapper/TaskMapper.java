@@ -16,7 +16,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
-public interface TaskMapper {
+public abstract class TaskMapper {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    protected com.example.construction.service.S3Service s3Service;
 
     @Mapping(source = "subObject.id", target = "subObjectId")
     @Mapping(source = "subObject.name", target = "subObjectName")
@@ -26,23 +29,23 @@ public interface TaskMapper {
     @Mapping(source = "assignees", target = "assigneeIds")
     @Mapping(source = "checklistItems", target = "checklist")
     @Mapping(source = "report", target = "report")
-    TaskDto toDto(Task task);
+    public abstract TaskDto toDto(Task task);
 
-    ChecklistItemDto toChecklistItemDto(ChecklistItem item);
+    public abstract ChecklistItemDto toChecklistItemDto(ChecklistItem item);
 
     @Mapping(target = "photos", expression = "java(mapPhotos(report.getPhotos()))")
     @Mapping(source = "author.fullName", target = "authorName")
-    ReportDto toReportDto(Report report);
+    public abstract ReportDto toReportDto(Report report);
 
-    default List<String> mapPhotos(List<ReportPhoto> photos) {
+    protected List<String> mapPhotos(List<ReportPhoto> photos) {
         if (photos == null)
             return null;
         return photos.stream()
-                .map(ReportPhoto::getFilePath)
+                .map(photo -> s3Service.generatePresignedUrl(photo.getStoredFile()))
                 .collect(Collectors.toList());
     }
 
-    default Set<Long> map(Set<User> value) {
+    protected Set<Long> map(Set<User> value) {
         if (value == null) {
             return null;
         }
@@ -57,5 +60,5 @@ public interface TaskMapper {
     @Mapping(target = "assignees", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    Task toEntity(TaskDto taskDto);
+    public abstract Task toEntity(TaskDto taskDto);
 }

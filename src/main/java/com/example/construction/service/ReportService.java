@@ -21,7 +21,7 @@ public class ReportService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ChecklistItemRepository checklistItemRepository;
-    private final FileStorageService fileStorageService;
+    private final S3Service s3Service;
     private final WorkflowService workflowService;
 
     @Transactional
@@ -63,9 +63,10 @@ public class ReportService {
 
         List<ReportPhoto> newPhotos = Arrays.stream(files.toArray())
                 .map(file -> {
-                    String fileName = fileStorageService.storeFile((MultipartFile) file);
+                    StoredFile storedFile = s3Service.uploadFile((MultipartFile) file);
                     ReportPhoto reportPhoto = new ReportPhoto();
-                    reportPhoto.setFilePath(fileName);
+                    reportPhoto.setStoredFile(storedFile);
+                    reportPhoto.setFilePath(storedFile.getS3Key());
                     reportPhoto.setReport(finalReport);
                     return reportPhoto;
                 })

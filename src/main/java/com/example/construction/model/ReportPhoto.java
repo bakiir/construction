@@ -18,7 +18,7 @@ public class ReportPhoto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(cascade = { CascadeType.MERGE, CascadeType.REFRESH }, fetch = FetchType.EAGER)
     @JoinColumn(name = "stored_file_id", referencedColumnName = "id")
     private StoredFile storedFile;
 

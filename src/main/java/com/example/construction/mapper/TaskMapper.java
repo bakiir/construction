@@ -41,6 +41,7 @@ public abstract class TaskMapper {
         if (photos == null)
             return null;
         return photos.stream()
+                .filter(photo -> photo.getStoredFile() != null)
                 .map(photo -> s3Service.generatePresignedUrl(photo.getStoredFile()))
                 .collect(Collectors.toList());
     }

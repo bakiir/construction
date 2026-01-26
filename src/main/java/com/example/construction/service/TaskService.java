@@ -7,10 +7,8 @@ import com.example.construction.mapper.TaskMapper;
 import com.example.construction.model.SubObject;
 import com.example.construction.model.Task;
 import com.example.construction.model.TaskApproval;
-import com.example.construction.reposirtories.SubObjectRepository;
-import com.example.construction.reposirtories.TaskApprovalRepository;
-import com.example.construction.reposirtories.TaskRepository;
-import com.example.construction.reposirtories.UserRepository;
+import com.example.construction.model.ChecklistItem;
+import com.example.construction.reposirtories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +24,7 @@ public class TaskService {
     private final SubObjectRepository subObjectRepository;
     private final UserRepository userRepository;
     private final TaskApprovalRepository taskApprovalRepository;
+    private final ChecklistItemRepository checklistItemRepository;
     private final TaskMapper mapper;
 
     public TaskDto create(TaskCreateDto dto) {
@@ -86,7 +85,20 @@ public class TaskService {
                     new HashSet<>(userRepository.findAllById(dto.getAssigneeIds())));
         }
 
-        return toDtoWithRejection(taskRepository.save(task));
+        Task savedTask = taskRepository.save(task);
+
+        if (dto.getChecklist() != null && !dto.getChecklist().isEmpty()) {
+            for (int i = 0; i < dto.getChecklist().size(); i++) {
+                ChecklistItem item = new ChecklistItem();
+                item.setTask(savedTask);
+                item.setDescription(dto.getChecklist().get(i));
+                item.setOrderIndex(i);
+                item.setIsCompleted(false);
+                checklistItemRepository.save(item);
+            }
+        }
+
+        return toDtoWithRejection(savedTask);
     }
 
     public TaskDto getById(Long id) {
@@ -138,10 +150,36 @@ public class TaskService {
 
     private TaskDto toDtoWithRejection(Task task) {
         TaskDto dto = mapper.toDto(task);
-        if (task.getStatus() == TaskStatus.REWORK || task.getStatus() == TaskStatus.UNDER_REVIEW_FOREMAN) {
+        if (task.getStatus() == TaskStatus.REWORK || task.getStatus() == TaskStatus.REWORK_FOREMAN
+                || task.getStatus() == TaskStatus.REWORK_PM) {
             taskApprovalRepository.findTopByTaskAndDecisionOrderByCreatedAtDesc(task, "REJECTED")
-                    .ifPresent(approval -> dto.setRejectionReason(approval.getComment()));
+                    .ifPresent(approval -> {
+                        dto.setRejectionReason(approval.getComment());
+                        if (approval.getApprover() != null) {
+                            dto.setRejectedByFullName(approval.getApprover().getFullName());
+                        }
+                    });
         }
+
+        // Populate foremanNote for PM review (latest note from Foreman when sending to
+        // PM)
+        if (task.getStatus() == TaskStatus.UNDER_REVIEW_PM) {
+            taskApprovalRepository.findTopByTaskAndDecisionAndRoleAtTimeOfApprovalOrderByCreatedAtDesc(
+                    task, "APPROVED", com.example.construction.Enums.Role.FOREMAN)
+                    .ifPresent(approval -> dto.setForemanNote(approval.getComment()));
+        }
+
         return dto;
+    }
+
+    public TaskDto updateFinalPhoto(Long taskId, String photoUrl) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        task.setFinalPhotoUrl(photoUrl);
+        task.setUpdatedAt(LocalDateTime.now());
+        taskRepository.save(task);
+
+        return mapper.toDto(task);
     }
 }

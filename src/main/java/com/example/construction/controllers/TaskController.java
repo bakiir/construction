@@ -48,9 +48,16 @@ public class TaskController {
         return service.update(id, dto);
     }
 
-    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ESTIMATOR')")
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);
+    }
+
+    @PutMapping("/{id}/final-photo")
+    @PreAuthorize("hasAnyRole('WORKER', 'FOREMAN', 'PM', 'ESTIMATOR', 'SUPER_ADMIN')")
+    public TaskDto updateFinalPhoto(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        String photoUrl = body.get("photoUrl");
+        return service.updateFinalPhoto(id, photoUrl);
     }
 }

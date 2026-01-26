@@ -36,8 +36,10 @@ public class ReportService {
         if (!task.getAssignees().contains(author)) {
             throw new IllegalStateException("User is not an assignee of this task.");
         }
-        if (task.getStatus() != TaskStatus.ACTIVE && task.getStatus() != TaskStatus.REWORK) {
-            throw new IllegalStateException("Task must be in ACTIVE or REWORK status to submit a report.");
+        if (task.getStatus() != TaskStatus.ACTIVE && task.getStatus() != TaskStatus.REWORK
+                && task.getStatus() != TaskStatus.REWORK_FOREMAN) {
+            throw new IllegalStateException(
+                    "Task must be in ACTIVE, REWORK or REWORK_FOREMAN status to submit a report.");
         }
 
         Report report = task.getReport();

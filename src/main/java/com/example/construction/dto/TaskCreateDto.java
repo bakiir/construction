@@ -30,4 +30,6 @@ public class TaskCreateDto {
 
     // пользователи по ID
     private Set<Long> assigneeIds;
+
+    private java.util.List<String> checklist;
 }

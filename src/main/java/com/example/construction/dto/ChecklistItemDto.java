@@ -1,11 +1,12 @@
 package com.example.construction.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class ChecklistItemDto {
     private Long id;
-    private String text;
+    private String description;
+    private Integer orderIndex;
+    private Boolean isCompleted;
+    private String photoUrl;
 }

@@ -17,9 +17,12 @@ public class WorkflowController {
 
     @PostMapping("/tasks/{taskId}/approve")
     @PreAuthorize("hasAnyRole('FOREMAN', 'PM', 'SUPER_ADMIN')")
-    public ResponseEntity<Void> approveTask(@PathVariable Long taskId, Authentication authentication) {
+    public ResponseEntity<Void> approveTask(
+            @PathVariable Long taskId,
+            @RequestBody(required = false) ApprovalDto approvalDto,
+            Authentication authentication) {
         String approverEmail = authentication.getName();
-        workflowService.approveTask(taskId, approverEmail);
+        workflowService.approveTask(taskId, approverEmail, approvalDto);
         return ResponseEntity.ok().build();
     }
 
@@ -31,6 +34,13 @@ public class WorkflowController {
             Authentication authentication) {
         String approverEmail = authentication.getName();
         workflowService.rejectTask(taskId, approverEmail, approvalDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/tasks/{taskId}/submit")
+    @PreAuthorize("hasRole('WORKER')")
+    public ResponseEntity<Void> submitTask(@PathVariable Long taskId) {
+        workflowService.submitTaskForReview(taskId);
         return ResponseEntity.ok().build();
     }
 }

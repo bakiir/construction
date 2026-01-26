@@ -10,4 +10,7 @@ import java.util.Optional;
 @Repository
 public interface TaskApprovalRepository extends JpaRepository<TaskApproval, Long> {
     Optional<TaskApproval> findTopByTaskAndDecisionOrderByCreatedAtDesc(Task task, String decision);
+
+    Optional<TaskApproval> findTopByTaskAndDecisionAndRoleAtTimeOfApprovalOrderByCreatedAtDesc(
+            Task task, String decision, com.example.construction.Enums.Role role);
 }

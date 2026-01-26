@@ -2,26 +2,33 @@ package com.example.construction.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
-@Setter
-@Getter
-@AllArgsConstructor
+@Table(name = "checklist_items")
+@Data
 @NoArgsConstructor
-@Table(name = "c_checklist_items")
+@AllArgsConstructor
 public class ChecklistItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String text;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
+
+    @Column(nullable = false, length = 500)
+    private String description;
+
+    @Column(name = "order_index", nullable = false)
+    private Integer orderIndex;
+
+    @Column(name = "is_completed", nullable = false)
+    private Boolean isCompleted = false;
+
+    @Column(name = "photo_url", columnDefinition = "TEXT")
+    private String photoUrl;
 }

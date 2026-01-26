@@ -56,6 +56,9 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private Priority priority;
 
+    @Column(name = "final_photo_url", columnDefinition = "TEXT")
+    private String finalPhotoUrl;
+
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = null;
 

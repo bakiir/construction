@@ -23,7 +23,8 @@ public class ChecklistService {
     }
 
     @Transactional
-    public ChecklistItem createChecklistItem(Long taskId, String description, Integer orderIndex) {
+    public ChecklistItem createChecklistItem(Long taskId, String description, Integer orderIndex,
+            Boolean isPhotoRequired) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
@@ -32,12 +33,13 @@ public class ChecklistService {
         item.setDescription(description);
         item.setOrderIndex(orderIndex);
         item.setIsCompleted(false);
+        item.setIsPhotoRequired(isPhotoRequired != null ? isPhotoRequired : false);
 
         return checklistItemRepository.save(item);
     }
 
     @Transactional
-    public ChecklistItem updateChecklistItem(Long id, String description, Integer orderIndex) {
+    public ChecklistItem updateChecklistItem(Long id, String description, Integer orderIndex, Boolean isPhotoRequired) {
         ChecklistItem item = checklistItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Checklist item not found"));
 
@@ -46,6 +48,9 @@ public class ChecklistService {
         }
         if (orderIndex != null) {
             item.setOrderIndex(orderIndex);
+        }
+        if (isPhotoRequired != null) {
+            item.setIsPhotoRequired(isPhotoRequired);
         }
 
         return checklistItemRepository.save(item);
@@ -82,8 +87,18 @@ public class ChecklistService {
             return true; // No checklists means all are "completed"
         }
 
-        // Check if all are completed and have photos
+        // Check if all are completed and have photos only if required
         return items.stream()
-                .allMatch(item -> Boolean.TRUE.equals(item.getIsCompleted()) && item.getPhotoUrl() != null);
+                .allMatch(item -> Boolean.TRUE.equals(item.getIsCompleted()) &&
+                        (!Boolean.TRUE.equals(item.getIsPhotoRequired()) || item.getPhotoUrl() != null));
+    }
+
+    @Transactional
+    public ChecklistItem updateRemark(Long id, String remark) {
+        ChecklistItem item = checklistItemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Checklist item not found"));
+
+        item.setRemark(remark);
+        return checklistItemRepository.save(item);
     }
 }

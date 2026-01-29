@@ -31,4 +31,10 @@ public class ChecklistItem {
 
     @Column(name = "photo_url", columnDefinition = "TEXT")
     private String photoUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String remark;
+
+    @Column(nullable = false)
+    private Boolean isPhotoRequired = false;
 }

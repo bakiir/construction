@@ -39,8 +39,10 @@ public class WorkflowController {
 
     @PostMapping("/tasks/{taskId}/submit")
     @PreAuthorize("hasRole('WORKER')")
-    public ResponseEntity<Void> submitTask(@PathVariable Long taskId) {
-        workflowService.submitTaskForReview(taskId);
+    public ResponseEntity<Void> submitTask(
+            @PathVariable Long taskId,
+            @RequestBody(required = false) ApprovalDto approvalDto) {
+        workflowService.submitTaskForReview(taskId, approvalDto);
         return ResponseEntity.ok().build();
     }
 }

@@ -25,9 +25,10 @@ public class WorkflowService {
     private final TaskApprovalRepository taskApprovalRepository;
     private final NotificationService notificationService;
     private final ChecklistService checklistService;
+    private final com.example.construction.reposirtories.ReportRepository reportRepository;
 
     @Transactional
-    public void submitTaskForReview(Long taskId) {
+    public void submitTaskForReview(Long taskId, ApprovalDto submissionDto) {
         Task task = findTaskById(taskId);
 
         if (task.getStatus() != TaskStatus.ACTIVE && task.getStatus() != TaskStatus.REWORK
@@ -47,6 +48,22 @@ public class WorkflowService {
         }
 
         task.setStatus(TaskStatus.UNDER_REVIEW_FOREMAN);
+
+        // Handle submission comment via Report
+        if (submissionDto != null && submissionDto.getComment() != null) {
+            com.example.construction.model.Report report = task.getReport();
+            if (report == null) {
+                report = new com.example.construction.model.Report();
+                report.setTask(task);
+                // Set first assignee as default author if not set
+                if (!task.getAssignees().isEmpty()) {
+                    report.setAuthor(task.getAssignees().iterator().next());
+                }
+            }
+            report.setComment(submissionDto.getComment());
+            reportRepository.save(report);
+        }
+
         taskRepository.save(task);
 
         // Notify all foremen

@@ -9,4 +9,6 @@ public class ChecklistItemDto {
     private Integer orderIndex;
     private Boolean isCompleted;
     private String photoUrl;
+    private String remark;
+    private Boolean isPhotoRequired;
 }

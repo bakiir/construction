@@ -89,9 +89,11 @@ public class TaskService {
 
         if (dto.getChecklist() != null && !dto.getChecklist().isEmpty()) {
             for (int i = 0; i < dto.getChecklist().size(); i++) {
+                com.example.construction.dto.ChecklistItemDto itemDto = dto.getChecklist().get(i);
                 ChecklistItem item = new ChecklistItem();
                 item.setTask(savedTask);
-                item.setDescription(dto.getChecklist().get(i));
+                item.setDescription(itemDto.getDescription());
+                item.setIsPhotoRequired(itemDto.getIsPhotoRequired() != null ? itemDto.getIsPhotoRequired() : false);
                 item.setOrderIndex(i);
                 item.setIsCompleted(false);
                 checklistItemRepository.save(item);

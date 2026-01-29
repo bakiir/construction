@@ -17,7 +17,7 @@ public class TaskController {
     private final TaskService service;
 
     @PostMapping
-    @PreAuthorize("hasRole('ESTIMATOR')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'PM', 'SUPER_ADMIN')")
     public TaskDto create(@RequestBody TaskCreateDto dto) {
         return service.create(dto);
     }
@@ -41,14 +41,14 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ESTIMATOR')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'PM', 'SUPER_ADMIN')")
     public TaskDto update(
             @PathVariable Long id,
             @RequestBody TaskCreateDto dto) {
         return service.update(id, dto);
     }
 
-    @PreAuthorize("hasRole('ESTIMATOR')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'PM', 'SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);

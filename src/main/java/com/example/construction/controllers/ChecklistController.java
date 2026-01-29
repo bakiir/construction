@@ -30,25 +30,17 @@ public class ChecklistController {
 
     @PostMapping("/task/{taskId}")
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
-    public ResponseEntity<ChecklistItemDto> createChecklistItem(
-            @PathVariable Long taskId,
-            @RequestBody ChecklistItemDto dto) {
-        ChecklistItem item = checklistService.createChecklistItem(
-                taskId,
-                dto.getDescription(),
-                dto.getOrderIndex());
+    public ResponseEntity<ChecklistItemDto> createItem(@PathVariable Long taskId, @RequestBody ChecklistItemDto dto) {
+        ChecklistItem item = checklistService.createChecklistItem(taskId, dto.getDescription(), dto.getOrderIndex(),
+                dto.getIsPhotoRequired());
         return ResponseEntity.ok(toDTO(item));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
-    public ResponseEntity<ChecklistItemDto> updateChecklistItem(
-            @PathVariable Long id,
-            @RequestBody ChecklistItemDto dto) {
-        ChecklistItem item = checklistService.updateChecklistItem(
-                id,
-                dto.getDescription(),
-                dto.getOrderIndex());
+    public ResponseEntity<ChecklistItemDto> updateItem(@PathVariable Long id, @RequestBody ChecklistItemDto dto) {
+        ChecklistItem item = checklistService.updateChecklistItem(id, dto.getDescription(), dto.getOrderIndex(),
+                dto.getIsPhotoRequired());
         return ResponseEntity.ok(toDTO(item));
     }
 
@@ -78,6 +70,15 @@ public class ChecklistController {
         return ResponseEntity.ok(toDTO(item));
     }
 
+    @PutMapping("/{id}/remark")
+    @PreAuthorize("hasAnyRole('FOREMAN', 'PM', 'SUPER_ADMIN')")
+    public ResponseEntity<ChecklistItemDto> updateRemark(@PathVariable Long id,
+            @RequestBody java.util.Map<String, String> payload) {
+        String remark = payload.get("remark");
+        ChecklistItem item = checklistService.updateRemark(id, remark);
+        return ResponseEntity.ok(toDTO(item));
+    }
+
     private ChecklistItemDto toDTO(ChecklistItem item) {
         ChecklistItemDto dto = new ChecklistItemDto();
         dto.setId(item.getId());
@@ -85,6 +86,8 @@ public class ChecklistController {
         dto.setOrderIndex(item.getOrderIndex());
         dto.setIsCompleted(item.getIsCompleted());
         dto.setPhotoUrl(item.getPhotoUrl());
+        dto.setRemark(item.getRemark());
+        dto.setIsPhotoRequired(item.getIsPhotoRequired());
         return dto;
     }
 }

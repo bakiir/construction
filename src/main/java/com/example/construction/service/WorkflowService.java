@@ -31,10 +31,10 @@ public class WorkflowService {
     public void submitTaskForReview(Long taskId, ApprovalDto submissionDto) {
         Task task = findTaskById(taskId);
 
-        if (task.getStatus() != TaskStatus.ACTIVE && task.getStatus() != TaskStatus.REWORK
+        if (task.getStatus() != TaskStatus.ACTIVE
                 && task.getStatus() != TaskStatus.REWORK_FOREMAN) {
             throw new IllegalStateException(
-                    "Task must be in ACTIVE, REWORK or REWORK_FOREMAN status to be submitted for review.");
+                    "Task must be in ACTIVE or REWORK_FOREMAN status to be submitted for review.");
         }
 
         // Validate checklists
@@ -113,6 +113,11 @@ public class WorkflowService {
     public void rejectTask(Long taskId, String approverEmail, ApprovalDto approvalDto) {
         Task task = findTaskById(taskId);
         User approver = findUserByEmail(approverEmail);
+
+        // Validate that rejection comment is provided
+        if (approvalDto == null || approvalDto.getComment() == null || approvalDto.getComment().trim().isEmpty()) {
+            throw new IllegalArgumentException("Rejection comment is required when rejecting a task.");
+        }
 
         TaskStatus currentStatus = task.getStatus();
         Role approverRole = approver.getRole();

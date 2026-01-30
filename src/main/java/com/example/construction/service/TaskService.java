@@ -152,7 +152,7 @@ public class TaskService {
 
     private TaskDto toDtoWithRejection(Task task) {
         TaskDto dto = mapper.toDto(task);
-        if (task.getStatus() == TaskStatus.REWORK || task.getStatus() == TaskStatus.REWORK_FOREMAN
+        if (task.getStatus() == TaskStatus.REWORK_FOREMAN
                 || task.getStatus() == TaskStatus.REWORK_PM) {
             taskApprovalRepository.findTopByTaskAndDecisionOrderByCreatedAtDesc(task, "REJECTED")
                     .ifPresent(approval -> {

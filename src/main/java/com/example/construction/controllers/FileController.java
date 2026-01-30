@@ -23,7 +23,7 @@ public class FileController {
 
     public FileController(@Value("${file.upload-dir}") String uploadDir) {
         this.storageDir = Paths.get(uploadDir).toAbsolutePath().normalize();
-    }
+    } 
 
     @GetMapping("/{fileName}")
     public ResponseEntity<Resource> getFile(@PathVariable String fileName) {

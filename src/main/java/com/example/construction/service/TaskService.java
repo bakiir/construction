@@ -6,6 +6,7 @@ import com.example.construction.dto.TaskDto;
 import com.example.construction.mapper.TaskMapper;
 import com.example.construction.model.SubObject;
 import com.example.construction.model.Task;
+import com.example.construction.dto.ChecklistItemDto;
 import com.example.construction.model.User;
 import com.example.construction.model.ChecklistItem;
 import com.example.construction.reposirtories.*;
@@ -17,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -164,6 +166,45 @@ public class TaskService {
             }
 
             task.setAssignees(assignees);
+        }
+
+        // Checklist Synchronization
+        if (dto.getChecklist() != null) {
+            List<ChecklistItem> existingItems = checklistItemRepository.findByTaskIdOrderByOrderIndexAsc(id);
+            Set<Long> dtoItemIds = dto.getChecklist().stream()
+                    .map(ChecklistItemDto::getId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            // 1. Delete items not in DTO
+            existingItems.stream()
+                    .filter(item -> !dtoItemIds.contains(item.getId()))
+                    .forEach(checklistItemRepository::delete);
+
+            // 2. Add or Update items
+            for (int i = 0; i < dto.getChecklist().size(); i++) {
+                ChecklistItemDto itemDto = dto.getChecklist().get(i);
+                ChecklistItem item;
+
+                if (itemDto.getId() != null) {
+                    item = checklistItemRepository.findById(itemDto.getId())
+                            .orElse(new ChecklistItem());
+                } else {
+                    item = new ChecklistItem();
+                    item.setTask(task);
+                }
+
+                item.setDescription(itemDto.getDescription());
+                item.setIsPhotoRequired(itemDto.getIsPhotoRequired() != null ? itemDto.getIsPhotoRequired() : false);
+                item.setOrderIndex(i);
+                if (itemDto.getId() == null) {
+                    item.setIsCompleted(false);
+                } else if (itemDto.getIsCompleted() != null) {
+                    item.setIsCompleted(itemDto.getIsCompleted());
+                }
+
+                checklistItemRepository.save(item);
+            }
         }
 
         return toDtoWithRejection(taskRepository.save(task));

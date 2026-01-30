@@ -34,4 +34,9 @@ public class TaskDto {
     private String rejectionReason;
     private String rejectedByFullName;
     private String foremanNote;
+
+    // Filtering info
+    private Long projectManagerId;
+    private List<Long> projectForemanIds;
+    private List<Long> subObjectWorkerIds;
 }

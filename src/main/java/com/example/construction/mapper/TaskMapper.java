@@ -26,6 +26,9 @@ public interface TaskMapper {
     @Mapping(source = "assignees", target = "assigneeIds")
     @Mapping(source = "checklistItems", target = "checklist")
     @Mapping(source = "report", target = "report")
+    @Mapping(source = "subObject.constructionObject.project.projectManager.id", target = "projectManagerId")
+    @Mapping(source = "subObject.constructionObject.project.foremen", target = "projectForemanIds")
+    @Mapping(source = "subObject.workers", target = "subObjectWorkerIds")
     TaskDto toDto(Task task);
 
     ChecklistItemDto toChecklistItemDto(ChecklistItem item);
@@ -49,6 +52,15 @@ public interface TaskMapper {
         return value.stream()
                 .map(User::getId)
                 .collect(Collectors.toSet());
+    }
+
+    default List<Long> mapToList(Set<User> value) {
+        if (value == null) {
+            return null;
+        }
+        return value.stream()
+                .map(User::getId)
+                .collect(Collectors.toList());
     }
 
     @Mapping(target = "subObject", ignore = true)

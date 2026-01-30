@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Setter
@@ -25,8 +27,12 @@ public class SubObject {
 
     private String name;
 
-
     @OneToMany(mappedBy = "subObject", fetch = FetchType.LAZY)
     private List<Task> tasks;
+
+    // Workers assigned to this sub-object
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "sub_object_workers", joinColumns = @JoinColumn(name = "sub_object_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private Set<User> workers = new HashSet<>();
 
 }

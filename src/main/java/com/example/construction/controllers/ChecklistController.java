@@ -29,7 +29,7 @@ public class ChecklistController {
     }
 
     @PostMapping("/task/{taskId}")
-    @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<ChecklistItemDto> createItem(@PathVariable Long taskId, @RequestBody ChecklistItemDto dto) {
         ChecklistItem item = checklistService.createChecklistItem(taskId, dto.getDescription(), dto.getOrderIndex(),
                 dto.getIsPhotoRequired());
@@ -37,7 +37,7 @@ public class ChecklistController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<ChecklistItemDto> updateItem(@PathVariable Long id, @RequestBody ChecklistItemDto dto) {
         ChecklistItem item = checklistService.updateChecklistItem(id, dto.getDescription(), dto.getOrderIndex(),
                 dto.getIsPhotoRequired());
@@ -45,7 +45,7 @@ public class ChecklistController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<Void> deleteChecklistItem(@PathVariable Long id) {
         checklistService.deleteChecklistItem(id);
         return ResponseEntity.noContent().build();

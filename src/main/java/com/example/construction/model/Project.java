@@ -9,7 +9,9 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Setter
@@ -35,6 +37,16 @@ public class Project {
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<ConstructionObject> constructionObjects;
+
+    // Project Manager (PM) responsible for this project
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_manager_id")
+    private User projectManager;
+
+    // Foremen assigned to this project
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "project_foremen", joinColumns = @JoinColumn(name = "project_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private Set<User> foremen = new HashSet<>();
 
     private LocalDateTime createdAt = LocalDateTime.now();
 

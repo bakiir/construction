@@ -6,7 +6,7 @@ import com.example.construction.dto.TaskDto;
 import com.example.construction.mapper.TaskMapper;
 import com.example.construction.model.SubObject;
 import com.example.construction.model.Task;
-import com.example.construction.model.TaskApproval;
+import com.example.construction.model.User;
 import com.example.construction.model.ChecklistItem;
 import com.example.construction.reposirtories.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -45,11 +47,12 @@ public class TaskService {
         } else {
             // Shift existing tasks if necessary
             List<Task> existingTasks = taskRepository.findBySubObjectId(subObject.getId());
-            boolean collision = existingTasks.stream().anyMatch(t -> t.getIndex().equals(dto.getIndex()));
+            boolean collision = existingTasks.stream()
+                    .anyMatch(t -> t.getIndex() != null && t.getIndex().equals(dto.getIndex()));
 
             if (collision) {
                 existingTasks.stream()
-                        .filter(t -> t.getIndex() >= dto.getIndex())
+                        .filter(t -> t.getIndex() != null && t.getIndex() >= dto.getIndex())
                         .forEach(t -> t.setIndex(t.getIndex() + 1));
                 taskRepository.saveAll(existingTasks);
             }
@@ -61,9 +64,9 @@ public class TaskService {
             // Check previous task (index - 1)
             // If index is 0, it's always ACTIVE (unless stopped by something else, but here
             // ok)
-            if (task.getIndex() > 0) {
+            if (task.getIndex() != null && task.getIndex() > 0) {
                 boolean previousTaskIncomplete = taskRepository.findBySubObjectId(subObject.getId()).stream()
-                        .filter(t -> t.getIndex() == task.getIndex() - 1)
+                        .filter(t -> t.getIndex() != null && t.getIndex().equals(task.getIndex() - 1))
                         .findFirst()
                         .map(t -> t.getStatus() != TaskStatus.COMPLETED)
                         .orElse(false); // If no prev task found (gap?), treat as not blocking (or blocking? assume not)
@@ -81,8 +84,18 @@ public class TaskService {
         }
 
         if (dto.getAssigneeIds() != null) {
-            task.setAssignees(
-                    new HashSet<>(userRepository.findAllById(dto.getAssigneeIds())));
+            Set<User> assignees = new HashSet<>(userRepository.findAllById(dto.getAssigneeIds()));
+
+            // Validate: Assignees must be from sub-object workers
+            Set<User> subObjectWorkers = subObject.getWorkers();
+            for (User assignee : assignees) {
+                if (!subObjectWorkers.contains(assignee)) {
+                    throw new IllegalArgumentException(
+                            "Worker " + assignee.getFullName() + " is not assigned to this sub-object");
+                }
+            }
+
+            task.setAssignees(assignees);
         }
 
         Task savedTask = taskRepository.save(task);
@@ -139,8 +152,18 @@ public class TaskService {
         task.setUpdatedAt(LocalDateTime.now());
 
         if (dto.getAssigneeIds() != null) {
-            task.setAssignees(
-                    new HashSet<>(userRepository.findAllById(dto.getAssigneeIds())));
+            Set<User> assignees = new HashSet<>(userRepository.findAllById(dto.getAssigneeIds()));
+
+            // Validate: Assignees must be from sub-object workers
+            Set<User> subObjectWorkers = task.getSubObject().getWorkers();
+            for (User assignee : assignees) {
+                if (!subObjectWorkers.contains(assignee)) {
+                    throw new IllegalArgumentException(
+                            "Worker " + assignee.getFullName() + " is not assigned to this sub-object");
+                }
+            }
+
+            task.setAssignees(assignees);
         }
 
         return toDtoWithRejection(taskRepository.save(task));

@@ -1,6 +1,5 @@
 package com.example.construction.model;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,6 +28,11 @@ public class ConstructionObject {
     @JoinColumn(name = "project_id", nullable = false)
     @JsonBackReference
     private Project project;
+
+    // Lead Foreman for this construction object (optional)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lead_foreman_id")
+    private User leadForeman;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = null;

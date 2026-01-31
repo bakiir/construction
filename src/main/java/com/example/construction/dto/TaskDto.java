@@ -39,4 +39,5 @@ public class TaskDto {
     private Long projectManagerId;
     private List<Long> projectForemanIds;
     private List<Long> subObjectWorkerIds;
+    private List<TaskApprovalDto> approvals;
 }

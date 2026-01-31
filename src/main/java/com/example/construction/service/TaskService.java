@@ -3,6 +3,7 @@ package com.example.construction.service;
 import com.example.construction.Enums.TaskStatus;
 import com.example.construction.dto.TaskCreateDto;
 import com.example.construction.dto.TaskDto;
+import com.example.construction.dto.TaskApprovalDto;
 import com.example.construction.mapper.TaskMapper;
 import com.example.construction.model.SubObject;
 import com.example.construction.model.Task;
@@ -227,13 +228,29 @@ public class TaskService {
                     });
         }
 
-        // Populate foremanNote for PM review (latest note from Foreman when sending to
-        // PM)
+        // Populate foremanNote for PM review
         if (task.getStatus() == TaskStatus.UNDER_REVIEW_PM) {
             taskApprovalRepository.findTopByTaskAndDecisionAndRoleAtTimeOfApprovalOrderByCreatedAtDesc(
                     task, "APPROVED", com.example.construction.Enums.Role.FOREMAN)
                     .ifPresent(approval -> dto.setForemanNote(approval.getComment()));
         }
+
+        // Populating Approvals History
+        List<TaskApprovalDto> approvalDtos = taskApprovalRepository.findAllByTaskOrderByCreatedAtDesc(task)
+                .stream()
+                .map(approval -> {
+                    TaskApprovalDto ad = new TaskApprovalDto();
+                    ad.setId(approval.getId());
+                    ad.setUserId(approval.getApprover().getId());
+                    ad.setUserFullName(approval.getApprover().getFullName());
+                    ad.setRoleAtTimeOfApproval(approval.getRoleAtTimeOfApproval());
+                    ad.setDecision(approval.getDecision());
+                    ad.setComment(approval.getComment());
+                    ad.setCreatedAt(approval.getCreatedAt());
+                    return ad;
+                })
+                .collect(Collectors.toList());
+        dto.setApprovals(approvalDtos);
 
         return dto;
     }

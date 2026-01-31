@@ -13,4 +13,6 @@ public interface TaskApprovalRepository extends JpaRepository<TaskApproval, Long
 
     Optional<TaskApproval> findTopByTaskAndDecisionAndRoleAtTimeOfApprovalOrderByCreatedAtDesc(
             Task task, String decision, com.example.construction.Enums.Role role);
+
+    java.util.List<TaskApproval> findAllByTaskOrderByCreatedAtDesc(Task task);
 }

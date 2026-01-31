@@ -2,7 +2,6 @@ package com.example.construction.service;
 
 import com.example.construction.Enums.Role;
 import com.example.construction.Enums.TaskStatus;
-import com.example.construction.Enums.TaskType;
 import com.example.construction.dto.ApprovalDto;
 import com.example.construction.model.Project;
 import com.example.construction.model.Task;
@@ -28,6 +27,7 @@ public class WorkflowService {
     private final NotificationService notificationService;
     private final ChecklistService checklistService;
     private final com.example.construction.reposirtories.ReportRepository reportRepository;
+    private final TaskService taskService;
 
     @Transactional
     public void submitTaskForReview(Long taskId, ApprovalDto submissionDto) {
@@ -108,7 +108,7 @@ public class WorkflowService {
             task.getAssignees().forEach(assignee -> notificationService.createNotification(assignee,
                     "Задача '" + task.getTitle() + "' завершена.", task));
 
-            activateNextTask(task);
+            taskService.recalculateTaskStatuses(task.getSubObject().getId());
         } else {
             throw new IllegalStateException(
                     "User " + approverEmail + " cannot approve this task at its current status.");
@@ -165,26 +165,6 @@ public class WorkflowService {
         }
 
         taskRepository.save(task);
-    }
-
-    private void activateNextTask(Task completedTask) {
-        if (completedTask.getTaskType() != TaskType.SEQUENTIAL) {
-            return;
-        }
-
-        Integer currentTaskIndex = completedTask.getIndex();
-        if (currentTaskIndex == null) {
-            return;
-        }
-
-        Long subObjectId = completedTask.getSubObject().getId();
-        taskRepository.findBySubObjectIdAndIndex(subObjectId, currentTaskIndex + 1)
-                .ifPresent(nextTask -> {
-                    if (nextTask.getStatus() == TaskStatus.LOCKED) {
-                        nextTask.setStatus(TaskStatus.ACTIVE);
-                        taskRepository.save(nextTask);
-                    }
-                });
     }
 
     private void createApprovalRecord(Task task, User approver, String decision, String comment) {

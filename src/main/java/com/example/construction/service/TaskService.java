@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -63,34 +64,25 @@ public class TaskService {
             task.setIndex(dto.getIndex());
         }
 
-        // Sequential Logic
-        if (dto.getTaskType() == com.example.construction.Enums.TaskType.SEQUENTIAL) {
-            // Check previous task (index - 1)
-            // If index is 0, it's always ACTIVE (unless stopped by something else, but here
-            // ok)
-            if (task.getIndex() != null && task.getIndex() > 0) {
-                boolean previousTaskIncomplete = taskRepository.findBySubObjectId(subObject.getId()).stream()
-                        .filter(t -> t.getIndex() != null && t.getIndex().equals(task.getIndex() - 1))
-                        .findFirst()
-                        .map(t -> t.getStatus() != TaskStatus.COMPLETED)
-                        .orElse(false); // If no prev task found (gap?), treat as not blocking (or blocking? assume not)
-
-                if (previousTaskIncomplete) {
-                    task.setStatus(TaskStatus.LOCKED);
-                } else {
-                    task.setStatus(TaskStatus.ACTIVE);
-                }
-            } else {
-                task.setStatus(TaskStatus.ACTIVE);
-            }
-        } else {
-            task.setStatus(TaskStatus.ACTIVE);
+        // Pre-initialize mandatory fields to satisfy DB constraints before
+        // recalculation
+        task.setStatus(TaskStatus.LOCKED);
+        if (task.getTaskType() == null) {
+            task.setTaskType(com.example.construction.Enums.TaskType.SEQUENTIAL);
         }
 
+        // 1. Initial save to get ID
+        Task taskToSave = taskRepository.save(task);
+
+        // 2. Centralized recalculation (includes the now-saved task)
+        recalculateTaskStatuses(subObject.getId());
+
+        // 3. Fetch refined task state
+        Task savedTask = taskRepository.findById(taskToSave.getId()).orElse(taskToSave);
+
+        // 4. Update Assignees if present (this is a simple field update)
         if (dto.getAssigneeIds() != null) {
             Set<User> assignees = new HashSet<>(userRepository.findAllById(dto.getAssigneeIds()));
-
-            // Validate: Assignees must be from sub-object workers
             Set<User> subObjectWorkers = subObject.getWorkers();
             for (User assignee : assignees) {
                 if (!subObjectWorkers.contains(assignee)) {
@@ -98,22 +90,11 @@ public class TaskService {
                             "Worker " + assignee.getFullName() + " is not assigned to this sub-object");
                 }
             }
-
-            task.setAssignees(assignees);
+            savedTask.setAssignees(assignees);
+            savedTask = taskRepository.save(savedTask);
         }
 
-        Task savedTask = taskRepository.save(task);
-
-        // Notify assignees only if project is PUBLISHED
-        com.example.construction.model.Project project = subObject.getConstructionObject().getProject();
-        if (project != null && project.getStatus() == com.example.construction.Enums.ProjectStatus.PUBLISHED) {
-            if (savedTask.getAssignees() != null) {
-                String message = "Вам назначена новая задача: '" + savedTask.getTitle() + "'";
-                savedTask.getAssignees()
-                        .forEach(assignee -> notificationService.createNotification(assignee, message, savedTask));
-            }
-        }
-
+        // 5. Checklist processing
         if (dto.getChecklist() != null && !dto.getChecklist().isEmpty()) {
             for (int i = 0; i < dto.getChecklist().size(); i++) {
                 com.example.construction.dto.ChecklistItemDto itemDto = dto.getChecklist().get(i);
@@ -127,7 +108,21 @@ public class TaskService {
             }
         }
 
-        return toDtoWithRejection(savedTask);
+        // Final effectively final copy for notifications
+        final Task taskForNotification = savedTask;
+
+        // 6. Notifications
+        com.example.construction.model.Project project = subObject.getConstructionObject().getProject();
+        if (project != null && project.getStatus() == com.example.construction.Enums.ProjectStatus.PUBLISHED) {
+            if (taskForNotification.getAssignees() != null) {
+                String message = "Вам назначена новая задача: '" + taskForNotification.getTitle() + "'";
+                taskForNotification.getAssignees()
+                        .forEach(assignee -> notificationService.createNotification(assignee, message,
+                                taskForNotification));
+            }
+        }
+
+        return toDtoWithRejection(taskRepository.findById(taskForNotification.getId()).orElse(taskForNotification));
     }
 
     public TaskDto getById(Long id) {
@@ -219,11 +214,48 @@ public class TaskService {
             }
         }
 
-        return toDtoWithRejection(taskRepository.save(task));
+        Task updatedTask = taskRepository.save(task);
+        recalculateTaskStatuses(updatedTask.getSubObject().getId());
+        return toDtoWithRejection(taskRepository.findById(updatedTask.getId()).orElse(updatedTask));
+    }
+
+    public void recalculateTaskStatuses(Long subObjectId) {
+        List<Task> tasks = taskRepository.findBySubObjectId(subObjectId);
+        tasks.sort(Comparator.comparing(t -> t.getIndex() != null ? t.getIndex() : Integer.MAX_VALUE));
+
+        boolean allPreviousCompleted = true;
+        for (Task t : tasks) {
+            com.example.construction.Enums.TaskType type = t.getTaskType() != null
+                    ? t.getTaskType()
+                    : com.example.construction.Enums.TaskType.SEQUENTIAL;
+
+            if (type == com.example.construction.Enums.TaskType.SEQUENTIAL) {
+                if (allPreviousCompleted) {
+                    if (t.getStatus() == TaskStatus.LOCKED) {
+                        t.setStatus(TaskStatus.ACTIVE);
+                    }
+                } else {
+                    t.setStatus(TaskStatus.LOCKED);
+                }
+            } else { // PARALLEL
+                if (t.getStatus() == TaskStatus.LOCKED) {
+                    t.setStatus(TaskStatus.ACTIVE);
+                }
+            }
+
+            if (t.getStatus() != TaskStatus.COMPLETED) {
+                allPreviousCompleted = false;
+            }
+        }
+        taskRepository.saveAll(tasks);
     }
 
     public void delete(Long id) {
-        taskRepository.deleteById(id);
+        taskRepository.findById(id).ifPresent(task -> {
+            Long subObjectId = task.getSubObject().getId();
+            taskRepository.delete(task);
+            recalculateTaskStatuses(subObjectId);
+        });
     }
 
     private TaskDto toDtoWithRejection(Task task) {

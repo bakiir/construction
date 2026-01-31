@@ -31,6 +31,7 @@ public class TaskService {
     private final TaskApprovalRepository taskApprovalRepository;
     private final ChecklistItemRepository checklistItemRepository;
     private final TaskMapper mapper;
+    private final NotificationService notificationService;
 
     public TaskDto create(TaskCreateDto dto) {
         SubObject subObject = subObjectRepository.findById(dto.getSubObjectId())
@@ -102,6 +103,13 @@ public class TaskService {
         }
 
         Task savedTask = taskRepository.save(task);
+
+        // Notify assignees
+        if (savedTask.getAssignees() != null) {
+            String message = "Вам назначена новая задача: '" + savedTask.getTitle() + "'";
+            savedTask.getAssignees()
+                    .forEach(assignee -> notificationService.createNotification(assignee, message, savedTask));
+        }
 
         if (dto.getChecklist() != null && !dto.getChecklist().isEmpty()) {
             for (int i = 0; i < dto.getChecklist().size(); i++) {

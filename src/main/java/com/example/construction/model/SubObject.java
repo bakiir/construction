@@ -27,7 +27,7 @@ public class SubObject {
 
     private String name;
 
-    @OneToMany(mappedBy = "subObject", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "subObject", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks;
 
     // Workers assigned to this sub-object

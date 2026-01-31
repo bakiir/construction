@@ -34,7 +34,7 @@ public class Project {
 
     private LocalDate deadline;
 
-    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<ConstructionObject> constructionObjects;
 
@@ -42,6 +42,10 @@ public class Project {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_manager_id")
     private User projectManager;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<Notification> notifications = new java.util.ArrayList<>();
 
     // Foremen assigned to this project
     @ManyToMany(fetch = FetchType.LAZY)

@@ -29,6 +29,9 @@ public class ConstructionObject {
     @JsonBackReference
     private Project project;
 
+    @OneToMany(mappedBy = "constructionObject", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<SubObject> subObjects = new java.util.ArrayList<>();
+
     // Lead Foreman for this construction object (optional)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lead_foreman_id")

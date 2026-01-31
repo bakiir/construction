@@ -4,6 +4,7 @@ import com.example.construction.Enums.Role;
 import com.example.construction.Enums.TaskStatus;
 import com.example.construction.Enums.TaskType;
 import com.example.construction.dto.ApprovalDto;
+import com.example.construction.model.Project;
 import com.example.construction.model.Task;
 import com.example.construction.model.TaskApproval;
 import com.example.construction.model.User;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -66,10 +68,15 @@ public class WorkflowService {
 
         taskRepository.save(task);
 
-        // Notify all foremen
-        List<User> foremen = userRepository.findAllByRole(Role.FOREMAN);
-        foremen.forEach(foreman -> notificationService.createNotification(foreman,
-                "Task '" + task.getTitle() + "' is ready for review."));
+        // Notify project foremen
+        Project project = task.getSubObject().getConstructionObject().getProject();
+        if (project != null) {
+            Set<User> foremen = project.getForemen();
+            if (foremen != null) {
+                foremen.forEach(foreman -> notificationService.createNotification(foreman,
+                        "Задача '" + task.getTitle() + "' готова к проверке.", task));
+            }
+        }
     }
 
     @Transactional
@@ -89,7 +96,8 @@ public class WorkflowService {
             // Notify all PMs
             List<User> pms = userRepository.findAllByRole(Role.PM);
             pms.forEach(pm -> notificationService.createNotification(pm,
-                    "Task '" + task.getTitle() + "' has been approved by foreman and is ready for final review."));
+                    "Задача '" + task.getTitle() + "' принята прорабом и ожидает финальной проверки.",
+                    task));
 
         } else if ((approverRole == Role.PM || approverRole == Role.SUPER_ADMIN)
                 && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
@@ -98,7 +106,7 @@ public class WorkflowService {
 
             // Notify assignees
             task.getAssignees().forEach(assignee -> notificationService.createNotification(assignee,
-                    "Task '" + task.getTitle() + "' has been completed."));
+                    "Задача '" + task.getTitle() + "' завершена.", task));
 
             activateNextTask(task);
         } else {
@@ -129,9 +137,9 @@ public class WorkflowService {
             createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());
 
             // Notify assignees (Workers)
-            String message = "Task '" + task.getTitle() + "' was sent for rework by Foreman. Comment: "
+            String message = "Задача '" + task.getTitle() + "' отправлена на доработку прорабом. Комментарий: "
                     + approvalDto.getComment();
-            task.getAssignees().forEach(assignee -> notificationService.createNotification(assignee, message));
+            task.getAssignees().forEach(assignee -> notificationService.createNotification(assignee, message, task));
 
         } else if ((approverRole == Role.PM || approverRole == Role.SUPER_ADMIN)
                 && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
@@ -139,11 +147,17 @@ public class WorkflowService {
             task.setStatus(TaskStatus.REWORK_PM);
             createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());
 
-            // Notify all Foremen
-            String message = "Task '" + task.getTitle() + "' was returned to Foreman by PM. Comment: "
+            // Notify Project Foremen
+            String message = "Задача '" + task.getTitle() + "' возвращена прорабу менеджером. Комментарий: "
                     + approvalDto.getComment();
-            List<User> foremen = userRepository.findAllByRole(Role.FOREMAN);
-            foremen.forEach(foreman -> notificationService.createNotification(foreman, message));
+
+            Project project = task.getSubObject().getConstructionObject().getProject();
+            if (project != null) {
+                Set<User> foremen = project.getForemen();
+                if (foremen != null) {
+                    foremen.forEach(foreman -> notificationService.createNotification(foreman, message, task));
+                }
+            }
 
         } else {
             throw new IllegalStateException(

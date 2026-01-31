@@ -17,9 +17,18 @@ public class NotificationService {
 
     @Transactional
     public void createNotification(User user, String message) {
+        createNotification(user, message, null);
+    }
+
+    @Transactional
+    public void createNotification(User user, String message, com.example.construction.model.Task task) {
         Notification notification = new Notification();
         notification.setUser(user);
         notification.setMessage(message);
+        notification.setTask(task);
+        if (task != null && task.getSubObject() != null && task.getSubObject().getConstructionObject() != null) {
+            notification.setProject(task.getSubObject().getConstructionObject().getProject());
+        }
         notificationRepository.save(notification);
     }
 
@@ -34,5 +43,18 @@ public class NotificationService {
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         notification.setRead(true);
         notificationRepository.save(notification);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Notification> getAllNotifications(Long userId) {
+        // In a real app, use Pageable to limit results (e.g., top 50)
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+        unread.forEach(n -> n.setRead(true));
+        notificationRepository.saveAll(unread);
     }
 }

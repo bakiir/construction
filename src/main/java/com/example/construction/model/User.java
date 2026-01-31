@@ -1,6 +1,5 @@
 package com.example.construction.model;
 
-
 import com.example.construction.Enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,9 +35,11 @@ public class User {
     private boolean isActive = true;
 
     @ManyToMany(mappedBy = "assignees")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Set<Task> tasks = new HashSet<>();
 
     @OneToMany(mappedBy = "author")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Report> reports = new ArrayList<>();
 
 }

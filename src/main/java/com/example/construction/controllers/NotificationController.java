@@ -28,8 +28,23 @@ public class NotificationController {
 
     @PostMapping("/{id}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long id, Authentication authentication) {
-        // Optional: Add validation to ensure the notification belongs to the authenticated user
+        // Optional: Add validation to ensure the notification belongs to the
+        // authenticated user
         notificationService.markAsRead(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<Notification>> getAllNotifications(Authentication authentication) {
+        Long userId = userService.getUserIdByEmail(authentication.getName());
+        List<Notification> notifications = notificationService.getAllNotifications(userId);
+        return ResponseEntity.ok(notifications);
+    }
+
+    @PostMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(Authentication authentication) {
+        Long userId = userService.getUserIdByEmail(authentication.getName());
+        notificationService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
 }

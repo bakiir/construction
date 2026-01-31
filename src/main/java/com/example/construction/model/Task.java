@@ -49,6 +49,9 @@ public class Task {
     @OneToOne(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Report report;
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<TaskApproval> approvals = new java.util.ArrayList<>();
+
     @ManyToMany
     @JoinTable(name = "task_assignees", joinColumns = @JoinColumn(name = "task_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<User> assignees = new HashSet<>();
@@ -58,6 +61,10 @@ public class Task {
 
     @Column(name = "final_photo_url", columnDefinition = "TEXT")
     private String finalPhotoUrl;
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<Notification> notifications = new java.util.ArrayList<>();
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = null;

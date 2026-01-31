@@ -20,6 +20,7 @@ public class ProjectDto {
     private Long createdBy;
     private Long progress;
     private LocalDate deadline;
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

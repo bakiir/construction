@@ -27,6 +27,7 @@ public class ProjectService {
     private final ProjectMapper projectMapper;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     public Optional<ProjectDto> getProjectById(Long id) {
         return projectRepository.findById(id)
@@ -115,6 +116,52 @@ public class ProjectService {
         return project.getForemen().stream()
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void publishProject(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        if (project.getStatus() == com.example.construction.Enums.ProjectStatus.PUBLISHED) {
+            return; // Already published
+        }
+
+        project.setStatus(com.example.construction.Enums.ProjectStatus.PUBLISHED);
+        projectRepository.save(project);
+
+        // Notify Admins and PMs
+        List<User> adminsAndPms = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == Role.PM || u.getRole() == Role.SUPER_ADMIN)
+                .collect(Collectors.toList());
+
+        adminsAndPms.forEach(u -> notificationService.createNotification(u,
+                "Новый проект опубликован: '" + project.getName() + "'", null));
+
+        // Notify Assigned Foremen
+        if (project.getForemen() != null) {
+            project.getForemen().forEach(foreman -> notificationService.createNotification(foreman,
+                    "Вы назначены на новый проект: '" + project.getName() + "'", null));
+        }
+
+        // Notify Workers for all tasks in this project
+        if (project.getConstructionObjects() != null) {
+            project.getConstructionObjects().forEach(co -> {
+                if (co.getSubObjects() != null) {
+                    co.getSubObjects().forEach(so -> {
+                        if (so.getTasks() != null) {
+                            so.getTasks().forEach(task -> {
+                                if (task.getAssignees() != null) {
+                                    task.getAssignees().forEach(worker -> notificationService.createNotification(worker,
+                                            "Проект опубликован. Вам назначена задача: '" + task.getTitle() + "'",
+                                            task));
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
     }
 
 }

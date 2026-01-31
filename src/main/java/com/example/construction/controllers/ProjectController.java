@@ -50,6 +50,13 @@ public class ProjectController {
         projectService.deleteProject(id);
     }
 
+    @PostMapping("/{id}/publish")
+    @PreAuthorize("hasRole('ESTIMATOR')")
+    public ResponseEntity<Void> publishProject(@PathVariable Long id) {
+        projectService.publishProject(id);
+        return ResponseEntity.ok().build();
+    }
+
     // Assignment endpoints
 
     @PostMapping("/{projectId}/assign-pm")

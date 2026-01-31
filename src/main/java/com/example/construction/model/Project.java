@@ -34,6 +34,9 @@ public class Project {
 
     private LocalDate deadline;
 
+    @Enumerated(EnumType.STRING)
+    private com.example.construction.Enums.ProjectStatus status = com.example.construction.Enums.ProjectStatus.DRAFT;
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<ConstructionObject> constructionObjects;

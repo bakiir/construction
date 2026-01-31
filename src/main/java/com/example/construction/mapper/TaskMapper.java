@@ -23,6 +23,7 @@ public interface TaskMapper {
     @Mapping(source = "subObject.constructionObject.name", target = "objectName")
     @Mapping(source = "subObject.constructionObject.address", target = "objectAddress")
     @Mapping(source = "subObject.constructionObject.project.name", target = "projectName")
+    @Mapping(source = "subObject.constructionObject.project.status", target = "projectStatus")
     @Mapping(source = "assignees", target = "assigneeIds")
     @Mapping(source = "checklistItems", target = "checklist")
     @Mapping(source = "report", target = "report")

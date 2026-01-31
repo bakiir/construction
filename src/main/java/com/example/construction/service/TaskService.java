@@ -104,11 +104,14 @@ public class TaskService {
 
         Task savedTask = taskRepository.save(task);
 
-        // Notify assignees
-        if (savedTask.getAssignees() != null) {
-            String message = "Вам назначена новая задача: '" + savedTask.getTitle() + "'";
-            savedTask.getAssignees()
-                    .forEach(assignee -> notificationService.createNotification(assignee, message, savedTask));
+        // Notify assignees only if project is PUBLISHED
+        com.example.construction.model.Project project = subObject.getConstructionObject().getProject();
+        if (project != null && project.getStatus() == com.example.construction.Enums.ProjectStatus.PUBLISHED) {
+            if (savedTask.getAssignees() != null) {
+                String message = "Вам назначена новая задача: '" + savedTask.getTitle() + "'";
+                savedTask.getAssignees()
+                        .forEach(assignee -> notificationService.createNotification(assignee, message, savedTask));
+            }
         }
 
         if (dto.getChecklist() != null && !dto.getChecklist().isEmpty()) {

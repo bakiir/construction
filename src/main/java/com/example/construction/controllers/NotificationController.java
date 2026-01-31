@@ -47,4 +47,17 @@ public class NotificationController {
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
+        notificationService.deleteNotification(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/clear-history")
+    public ResponseEntity<Void> clearHistory(Authentication authentication) {
+        Long userId = userService.getUserIdByEmail(authentication.getName());
+        notificationService.deleteAllNotifications(userId);
+        return ResponseEntity.ok().build();
+    }
 }

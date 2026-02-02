@@ -99,7 +99,7 @@ public class ReportService {
         reportRepository.save(report);
 
         // Trigger workflow
-        workflowService.submitTaskForReview(task.getId(), null);
+        workflowService.submitTaskForReview(task.getId(), null, authorEmail);
 
     }
 }

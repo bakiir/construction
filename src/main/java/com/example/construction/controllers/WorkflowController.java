@@ -41,8 +41,10 @@ public class WorkflowController {
     @PreAuthorize("hasRole('WORKER')")
     public ResponseEntity<Void> submitTask(
             @PathVariable Long taskId,
-            @RequestBody(required = false) ApprovalDto approvalDto) {
-        workflowService.submitTaskForReview(taskId, approvalDto);
+            @RequestBody(required = false) ApprovalDto approvalDto,
+            Authentication authentication) {
+        String submitterEmail = authentication != null ? authentication.getName() : null;
+        workflowService.submitTaskForReview(taskId, approvalDto, submitterEmail);
         return ResponseEntity.ok().build();
     }
 }

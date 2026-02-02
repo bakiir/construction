@@ -30,7 +30,7 @@ public class WorkflowService {
     private final TaskService taskService;
 
     @Transactional
-    public void submitTaskForReview(Long taskId, ApprovalDto submissionDto) {
+    public void submitTaskForReview(Long taskId, ApprovalDto submissionDto, String submitterEmail) {
         Task task = findTaskById(taskId);
 
         if (task.getStatus() != TaskStatus.ACTIVE
@@ -57,9 +57,15 @@ public class WorkflowService {
             if (report == null) {
                 report = new com.example.construction.model.Report();
                 report.setTask(task);
-                // Set first assignee as default author if not set
-                if (!task.getAssignees().isEmpty()) {
+
+                // Set author from submitterEmail if available, otherwise fallback to assignee
+                if (submitterEmail != null) {
+                    report.setAuthor(findUserByEmail(submitterEmail));
+                } else if (!task.getAssignees().isEmpty()) {
                     report.setAuthor(task.getAssignees().iterator().next());
+                } else {
+                    // This should ideally not happen if security is enabled
+                    throw new IllegalStateException("Cannot create report: no author identified.");
                 }
             }
             report.setComment(submissionDto.getComment());

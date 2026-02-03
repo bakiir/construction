@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Base64;
 import java.util.UUID;
 
 @Service
@@ -41,10 +42,9 @@ public class FileStorageService {
         }
         String fileName = UUID.randomUUID().toString() + fileExtension;
 
-
         try {
             // Check if the file's name contains invalid characters
-            if(fileName.contains("..")) {
+            if (fileName.contains("..")) {
                 throw new RuntimeException("Sorry! Filename contains invalid path sequence " + fileName);
             }
 
@@ -54,6 +54,35 @@ public class FileStorageService {
             return fileName;
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
+        }
+    }
+
+    public String storeBase64File(String base64Data) {
+        if (base64Data == null || !base64Data.startsWith("data:image")) {
+            return base64Data;
+        }
+
+        try {
+            String[] parts = base64Data.split(",");
+            String metadata = parts[0];
+            String base64Content = parts[1];
+
+            String extension = ".png";
+            if (metadata.contains("image/jpeg")) {
+                extension = ".jpg";
+            } else if (metadata.contains("image/webp")) {
+                extension = ".webp";
+            }
+
+            String fileName = UUID.randomUUID().toString() + extension;
+            byte[] decodedBytes = Base64.getDecoder().decode(base64Content);
+
+            Path targetLocation = this.fileStorageLocation.resolve(fileName);
+            Files.write(targetLocation, decodedBytes);
+
+            return fileName;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to store base64 image", e);
         }
     }
 }

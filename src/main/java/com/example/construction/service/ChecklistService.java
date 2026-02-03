@@ -16,6 +16,7 @@ public class ChecklistService {
 
     private final ChecklistItemRepository checklistItemRepository;
     private final TaskRepository taskRepository;
+    private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
     public List<ChecklistItem> getChecklistsByTaskId(Long taskId) {
@@ -75,7 +76,8 @@ public class ChecklistService {
         ChecklistItem item = checklistItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Checklist item not found"));
 
-        item.setPhotoUrl(photoUrl);
+        String storedFileName = fileStorageService.storeBase64File(photoUrl);
+        item.setPhotoUrl(storedFileName);
         return checklistItemRepository.save(item);
     }
 

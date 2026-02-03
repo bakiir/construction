@@ -33,6 +33,7 @@ public class TaskService {
     private final ChecklistItemRepository checklistItemRepository;
     private final TaskMapper mapper;
     private final NotificationService notificationService;
+    private final FileStorageService fileStorageService;
 
     public TaskDto create(TaskCreateDto dto) {
         SubObject subObject = subObjectRepository.findById(dto.getSubObjectId())
@@ -302,7 +303,8 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        task.setFinalPhotoUrl(photoUrl);
+        String storedFileName = fileStorageService.storeBase64File(photoUrl);
+        task.setFinalPhotoUrl(storedFileName);
         task.setUpdatedAt(LocalDateTime.now());
         taskRepository.save(task);
 

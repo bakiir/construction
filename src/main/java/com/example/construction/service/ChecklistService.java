@@ -59,7 +59,10 @@ public class ChecklistService {
 
     @Transactional
     public void deleteChecklistItem(Long id) {
-        checklistItemRepository.deleteById(id);
+        checklistItemRepository.findById(id).ifPresent(item -> {
+            fileStorageService.deleteFile(item.getPhotoUrl());
+            checklistItemRepository.delete(item);
+        });
     }
 
     @Transactional
@@ -75,6 +78,9 @@ public class ChecklistService {
     public ChecklistItem updatePhoto(Long id, String photoUrl) {
         ChecklistItem item = checklistItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Checklist item not found"));
+
+        // Delete old photo file if it exists
+        fileStorageService.deleteFile(item.getPhotoUrl());
 
         String storedFileName = fileStorageService.storeBase64File(photoUrl);
         item.setPhotoUrl(storedFileName);

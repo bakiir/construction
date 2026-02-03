@@ -184,10 +184,13 @@ public class TaskService {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
-            // 1. Delete items not in DTO
+            // 1. Delete items not in DTO (including photos from disk)
             existingItems.stream()
                     .filter(item -> !dtoItemIds.contains(item.getId()))
-                    .forEach(checklistItemRepository::delete);
+                    .forEach(item -> {
+                        fileStorageService.deleteFile(item.getPhotoUrl());
+                        checklistItemRepository.delete(item);
+                    });
 
             // 2. Add or Update items
             for (int i = 0; i < dto.getChecklist().size(); i++) {
@@ -253,6 +256,15 @@ public class TaskService {
 
     public void delete(Long id) {
         taskRepository.findById(id).ifPresent(task -> {
+            // Delete associated files from storage
+            fileStorageService.deleteFile(task.getFinalPhotoUrl());
+            if (task.getChecklistItems() != null) {
+                task.getChecklistItems().forEach(item -> fileStorageService.deleteFile(item.getPhotoUrl()));
+            }
+            if (task.getReport() != null && task.getReport().getPhotos() != null) {
+                task.getReport().getPhotos().forEach(photo -> fileStorageService.deleteFile(photo.getFilePath()));
+            }
+
             Long subObjectId = task.getSubObject().getId();
             taskRepository.delete(task);
             recalculateTaskStatuses(subObjectId);
@@ -302,6 +314,11 @@ public class TaskService {
     public TaskDto updateFinalPhoto(Long taskId, String photoUrl) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        // Delete old final photo from disk if it exists
+        if (task.getFinalPhotoUrl() != null) {
+            fileStorageService.deleteFile(task.getFinalPhotoUrl());
+        }
 
         String storedFileName = fileStorageService.storeBase64File(photoUrl);
         task.setFinalPhotoUrl(storedFileName);

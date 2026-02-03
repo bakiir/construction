@@ -85,4 +85,18 @@ public class FileStorageService {
             throw new RuntimeException("Failed to store base64 image", e);
         }
     }
+
+    public void deleteFile(String fileName) {
+        if (fileName == null || fileName.startsWith("data:") || fileName.startsWith("http")) {
+            return; // Don't try to delete base64 strings or remote URLs
+        }
+
+        try {
+            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            // Log but don't fail the whole operation if file delete fails
+            System.err.println("Could not delete file: " + fileName + ". Error: " + e.getMessage());
+        }
+    }
 }

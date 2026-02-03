@@ -47,6 +47,10 @@ public class ReportService {
             report = new Report();
             report.setTask(task);
         } else {
+            // Delete existing photos from disk
+            if (report.getPhotos() != null) {
+                report.getPhotos().forEach(p -> fileStorageService.deleteFile(p.getFilePath()));
+            }
             // Clear existing data for update
             report.getPhotos().clear();
             report.getChecklistAnswers().clear();

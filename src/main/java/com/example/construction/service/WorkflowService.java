@@ -34,9 +34,23 @@ public class WorkflowService {
         Task task = findTaskById(taskId);
 
         if (task.getStatus() != TaskStatus.ACTIVE
-                && task.getStatus() != TaskStatus.REWORK_FOREMAN) {
+                && task.getStatus() != TaskStatus.REWORK_FOREMAN
+                && task.getStatus() != TaskStatus.REWORK_PM) {
             throw new IllegalStateException(
-                    "Task must be in ACTIVE or REWORK_FOREMAN status to be submitted for review.");
+                    "Task must be in ACTIVE, REWORK_FOREMAN, or REWORK_PM status to be submitted for review.");
+        }
+
+        // Validate submitter is assigned to the task
+        if (submitterEmail != null) {
+            User submitter = findUserByEmail(submitterEmail);
+            if (submitter != null &&
+                    (submitter.getRole() == com.example.construction.Enums.Role.WORKER ||
+                            submitter.getRole() == com.example.construction.Enums.Role.FOREMAN)) {
+                if (!task.getAssignees().contains(submitter)) {
+                    throw new IllegalStateException(
+                            "Вы не назначены на эту задачу и не можете отправить её на проверку.");
+                }
+            }
         }
 
         // Validate checklists
@@ -152,6 +166,13 @@ public class WorkflowService {
             // PM rejects -> Back to Foreman (REWORK_PM)
             task.setStatus(TaskStatus.REWORK_PM);
             createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());
+
+            // Notify assignees (Workers)
+            String workerMessage = "Задача '" + task.getTitle()
+                    + "' возвращена менеджером на доработку (через прораба). Комментарий: "
+                    + approvalDto.getComment();
+            task.getAssignees()
+                    .forEach(assignee -> notificationService.createNotification(assignee, workerMessage, task));
 
             // Notify Project Foremen
             String message = "Задача '" + task.getTitle() + "' возвращена прорабу менеджером. Комментарий: "

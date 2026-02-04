@@ -36,7 +36,12 @@ public class TaskController {
 
     @GetMapping("/sub-object/{subObjectId}")
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN', 'WORKER')")
-    public List<TaskDto> getBySubObject(@PathVariable Long subObjectId) {
+    public List<TaskDto> getBySubObject(
+            @PathVariable Long subObjectId,
+            @RequestParam(required = false) Long userId) {
+        if (userId != null) {
+            return service.getBySubObjectForUser(subObjectId, userId);
+        }
         return service.getBySubObject(subObjectId);
     }
 

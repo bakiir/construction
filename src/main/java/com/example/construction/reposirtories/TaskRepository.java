@@ -10,5 +10,6 @@ import java.util.Optional;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findBySubObjectId(Long id);
-    Optional<Task> findBySubObjectIdAndIndex(Long subObjectId, Integer index);
+
+    List<Task> findBySubObjectIdAndIndex(Long subObjectId, Integer index);
 }

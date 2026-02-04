@@ -29,6 +29,7 @@ public class TaskDto {
     private String projectName;
     private String projectStatus;
     private Set<Long> assigneeIds;
+    private Set<String> assigneeNames;
     private List<ChecklistItemDto> checklist;
     private String finalPhotoUrl;
     private ReportDto report;

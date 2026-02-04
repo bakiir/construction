@@ -25,6 +25,7 @@ public interface TaskMapper {
     @Mapping(source = "subObject.constructionObject.project.name", target = "projectName")
     @Mapping(source = "subObject.constructionObject.project.status", target = "projectStatus")
     @Mapping(source = "assignees", target = "assigneeIds")
+    @Mapping(source = "assignees", target = "assigneeNames")
     @Mapping(source = "checklistItems", target = "checklist")
     @Mapping(source = "report", target = "report")
     @Mapping(source = "subObject.constructionObject.project.projectManager.id", target = "projectManagerId")
@@ -62,6 +63,15 @@ public interface TaskMapper {
         return value.stream()
                 .map(User::getId)
                 .collect(Collectors.toList());
+    }
+
+    default Set<String> mapNames(Set<User> value) {
+        if (value == null) {
+            return null;
+        }
+        return value.stream()
+                .map(User::getFullName)
+                .collect(Collectors.toSet());
     }
 
     @Mapping(target = "subObject", ignore = true)

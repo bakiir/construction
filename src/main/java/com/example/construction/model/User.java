@@ -34,6 +34,9 @@ public class User {
 
     private boolean isActive = true;
 
+    @Column(name = "telegram_chat_id", nullable = true)
+    private Long telegramChatId;
+
     @ManyToMany(mappedBy = "assignees")
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Set<Task> tasks = new HashSet<>();

@@ -1,7 +1,7 @@
-package com.example.construction.controllers;
+package com.example.construction.controllers.notification;
 
 import com.example.construction.model.Notification;
-import com.example.construction.service.NotificationService;
+import com.example.construction.service.notification.NotificationService;
 import com.example.construction.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

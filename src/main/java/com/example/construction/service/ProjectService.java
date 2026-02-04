@@ -11,6 +11,7 @@ import com.example.construction.model.Project;
 import com.example.construction.model.User;
 import com.example.construction.reposirtories.ProjectRepository;
 import com.example.construction.reposirtories.UserRepository;
+import com.example.construction.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +59,7 @@ public class ProjectService {
     public ProjectDto updateProject(ProjectUpdateDto projectUpdateDto, Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
+        validateProjectAccess(project);
         projectMapper.updateEntityFromDto(projectUpdateDto, project);
         project.setUpdatedAt(LocalDateTime.now());
         Project updatedProject = projectRepository.save(project);
@@ -65,7 +67,9 @@ public class ProjectService {
     }
 
     public void deleteProject(Long id) {
-        projectRepository.deleteById(id);
+        Project project = projectRepository.findById(id).orElseThrow(() -> new RuntimeException("Project not found"));
+        validateProjectAccess(project);
+        projectRepository.delete(project);
     }
 
     // Assignment methods
@@ -164,4 +168,23 @@ public class ProjectService {
         }
     }
 
+    private void validateProjectAccess(Project project) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+                .getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() == Role.SUPER_ADMIN)
+            return;
+        if (user.getRole() == Role.ESTIMATOR)
+            return;
+
+        if (user.getRole() == Role.PM) {
+            if (project.getProjectManager() != null && project.getProjectManager().getId().equals(user.getId())) {
+                return;
+            }
+        }
+
+        throw new org.springframework.security.access.AccessDeniedException(
+                "You do not have permission to modify this project.");
+    }
 }

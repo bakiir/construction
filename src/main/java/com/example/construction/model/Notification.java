@@ -1,5 +1,6 @@
 package com.example.construction.model;
 
+import com.example.construction.Enums.NotificationCategory; // Added import
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -35,6 +36,13 @@ public class Notification {
     @JoinColumn(name = "task_id")
     @JsonIgnore
     private Task task;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = true)
+    private NotificationCategory category = NotificationCategory.SYSTEM;
+
+    @Column(name = "title", nullable = true)
+    private String title;
 
     @Column(nullable = false)
     private String message;

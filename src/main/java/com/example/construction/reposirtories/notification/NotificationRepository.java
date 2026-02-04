@@ -1,4 +1,4 @@
-package com.example.construction.reposirtories;
+package com.example.construction.reposirtories.notification;
 
 import com.example.construction.model.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;

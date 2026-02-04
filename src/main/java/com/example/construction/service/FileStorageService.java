@@ -93,6 +93,10 @@ public class FileStorageService {
 
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+            // Security Check: Prevent Path Traversal
+            if (!filePath.startsWith(this.fileStorageLocation)) {
+                throw new SecurityException("Cannot delete file outside of upload directory: " + fileName);
+            }
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
             // Log but don't fail the whole operation if file delete fails

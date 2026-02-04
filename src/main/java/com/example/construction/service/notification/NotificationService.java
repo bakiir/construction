@@ -1,8 +1,8 @@
-package com.example.construction.service;
+package com.example.construction.service.notification;
 
 import com.example.construction.model.Notification;
 import com.example.construction.model.User;
-import com.example.construction.reposirtories.NotificationRepository;
+import com.example.construction.reposirtories.notification.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,14 +14,21 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void createNotification(User user, String message) {
-        createNotification(user, message, null);
+        createNotification(user, null, message, com.example.construction.Enums.NotificationCategory.SYSTEM, null);
     }
 
     @Transactional
     public void createNotification(User user, String message, com.example.construction.model.Task task) {
+        createNotification(user, null, message, com.example.construction.Enums.NotificationCategory.TASK_UPDATE, task);
+    }
+
+    @Transactional
+    public void createNotification(User user, String title, String message,
+            com.example.construction.Enums.NotificationCategory category, com.example.construction.model.Task task) {
         Notification notification = new Notification();
         notification.setUser(user);
         notification.setMessage(message);
@@ -29,7 +36,10 @@ public class NotificationService {
         if (task != null && task.getSubObject() != null && task.getSubObject().getConstructionObject() != null) {
             notification.setProject(task.getSubObject().getConstructionObject().getProject());
         }
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Publish event for Async delivery
+        eventPublisher.publishEvent(new com.example.construction.event.NotificationCreatedEvent(this, saved));
     }
 
     @Transactional(readOnly = true)

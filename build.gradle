@@ -18,6 +18,9 @@ configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
+	all {
+		exclude group: 'commons-logging', module: 'commons-logging'
+	}
 }
 
 repositories {
@@ -38,7 +41,11 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-	implementation("org.mapstruct:mapstruct:1.5.5.Final")
+	implementation('org.telegram:telegrambots:6.9.7.1') {
+		exclude group: 'com.fasterxml.jackson.module', module: 'jackson-module-jaxb-annotations' // Exclude legacy javax module
+	}
+
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	annotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
 	testImplementation 'org.springframework.boot:spring-boot-starter-test' // Simplified test dependency
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

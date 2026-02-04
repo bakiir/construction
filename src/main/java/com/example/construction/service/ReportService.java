@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +25,35 @@ public class ReportService {
     private final FileStorageService fileStorageService;
     private final WorkflowService workflowService;
 
-    @Transactional
     public void createReport(Long taskId, ReportCreateDto reportDto, List<MultipartFile> files, String authorEmail) {
+        // 1. Upload files first (I/O, slow, non-transactional)
+        List<String> uploadedFileNames = new ArrayList<>();
+        try {
+            if (files != null) {
+                for (MultipartFile file : files) {
+                    uploadedFileNames.add(fileStorageService.storeFile(file));
+                }
+            }
+
+            // 2. Perform DB operations in separate transaction
+            saveReportToDb(taskId, reportDto, uploadedFileNames, authorEmail);
+
+        } catch (Exception e) {
+            // 3. Compensation: Delete uploaded files if DB save fails
+            for (String fileName : uploadedFileNames) {
+                try {
+                    fileStorageService.deleteFile(fileName);
+                } catch (Exception deleteEx) {
+                    System.err.println("Failed to cleanup file: " + fileName);
+                }
+            }
+            throw e; // Re-throw to propagate error
+        }
+    }
+
+    @Transactional
+    public void saveReportToDb(Long taskId, ReportCreateDto reportDto, List<String> uploadedFileNames,
+            String authorEmail) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
 
@@ -47,11 +75,6 @@ public class ReportService {
             report = new Report();
             report.setTask(task);
         } else {
-            // Delete existing photos from disk
-            if (report.getPhotos() != null) {
-                report.getPhotos().forEach(p -> fileStorageService.deleteFile(p.getFilePath()));
-            }
-            // Clear existing data for update
             report.getPhotos().clear();
             report.getChecklistAnswers().clear();
         }
@@ -59,17 +82,14 @@ public class ReportService {
         report.setAuthor(author);
         report.setComment(reportDto.getComment());
 
+        // Save to establish ID if needed (though cascading usually handles it)
         reportRepository.save(report);
-
-        // Store photos
-        // Clear existing photos first (orphanRemoval will delete them from DB)
-        report.getPhotos().clear();
 
         final Report finalReport = report;
 
-        List<ReportPhoto> newPhotos = Arrays.stream(files.toArray())
-                .map(file -> {
-                    String fileName = fileStorageService.storeFile((MultipartFile) file);
+        // Map uploaded strings to entities
+        List<ReportPhoto> newPhotos = uploadedFileNames.stream()
+                .map(fileName -> {
                     ReportPhoto reportPhoto = new ReportPhoto();
                     reportPhoto.setFilePath(fileName);
                     reportPhoto.setReport(finalReport);
@@ -77,12 +97,9 @@ public class ReportService {
                 })
                 .collect(Collectors.toList());
 
-        // Add new photos to the collection
         report.getPhotos().addAll(newPhotos);
 
         // Save checklist answers
-        report.getChecklistAnswers().clear();
-
         List<ReportChecklistAnswer> newAnswers = reportDto.getChecklistAnswers().stream()
                 .map(answerDto -> {
                     ChecklistItem item = checklistItemRepository.findById(answerDto.getChecklistItemId())
@@ -99,11 +116,7 @@ public class ReportService {
 
         report.getChecklistAnswers().addAll(newAnswers);
 
-        // Save the report again to cascade the new collection elements
         reportRepository.save(report);
-
-        // Trigger workflow
         workflowService.submitTaskForReview(task.getId(), null, authorEmail);
-
     }
 }

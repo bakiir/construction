@@ -11,6 +11,7 @@ import com.example.construction.dto.ChecklistItemDto;
 import com.example.construction.model.User;
 import com.example.construction.model.ChecklistItem;
 import com.example.construction.reposirtories.*;
+import com.example.construction.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +39,7 @@ public class TaskService {
     private final NotificationService notificationService;
     private final FileStorageService fileStorageService;
 
+    @org.springframework.transaction.annotation.Transactional
     public TaskDto create(TaskCreateDto dto) {
         SubObject subObject = subObjectRepository.findById(dto.getSubObjectId())
                 .orElseThrow(() -> new RuntimeException("SubObject not found"));
@@ -179,9 +181,12 @@ public class TaskService {
                 .toList();
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public TaskDto update(Long id, TaskCreateDto dto) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        validateTaskAccess(task);
 
         task.setTitle(dto.getTitle());
         task.setTaskType(dto.getTaskType());
@@ -330,6 +335,7 @@ public class TaskService {
         taskRepository.saveAll(existingTasks);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void recalculateTaskStatuses(Long subObjectId) {
         List<Task> tasks = taskRepository.findBySubObjectId(subObjectId);
         tasks.sort(Comparator.comparing(t -> t.getIndex() != null ? t.getIndex() : Integer.MAX_VALUE));
@@ -367,8 +373,10 @@ public class TaskService {
         taskRepository.saveAll(tasks);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void delete(Long id) {
         taskRepository.findById(id).ifPresent(task -> {
+            validateTaskAccess(task);
             // Delete associated files from storage
             fileStorageService.deleteFile(task.getFinalPhotoUrl());
             if (task.getChecklistItems() != null) {
@@ -424,6 +432,7 @@ public class TaskService {
         return dto;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public TaskDto updateFinalPhoto(Long taskId, String photoUrl) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
@@ -448,5 +457,33 @@ public class TaskService {
         List<Task> existing = taskRepository.findBySubObjectIdAndIndex(subObjectId, index);
         return !existing.isEmpty() && existing.stream()
                 .allMatch(t -> t.getTaskType() == com.example.construction.Enums.TaskType.PARALLEL);
+    }
+
+    private void validateTaskAccess(Task task) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+                .getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() == com.example.construction.Enums.Role.SUPER_ADMIN)
+            return;
+        if (user.getRole() == com.example.construction.Enums.Role.ESTIMATOR)
+            return;
+
+        com.example.construction.model.Project project = task.getSubObject().getConstructionObject().getProject();
+
+        if (user.getRole() == com.example.construction.Enums.Role.PM) {
+            if (project.getProjectManager() != null && project.getProjectManager().getId().equals(user.getId())) {
+                return;
+            }
+        }
+
+        // Foremen can only edit tasks if assigned? (Simplification: PM/Admin/Estimator
+        // ownership needed for structural changes)
+        // If Foreman needs to update status, that's different. But update() is generic.
+        // For now, restricting structural updates to PM/Admin/Estimator + correct
+        // ownership.
+
+        throw new org.springframework.security.access.AccessDeniedException(
+                "You do not have permission to modify this task.");
     }
 }

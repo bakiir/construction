@@ -35,6 +35,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskApprovalRepository taskApprovalRepository;
     private final ChecklistItemRepository checklistItemRepository;
+    private final ChecklistTemplateRepository checklistTemplateRepository;
     private final TaskMapper mapper;
     private final NotificationService notificationService;
     private final FileStorageService fileStorageService;
@@ -49,7 +50,13 @@ public class TaskService {
         task.setTaskType(dto.getTaskType());
         task.setPriority(dto.getPriority());
         task.setDeadline(dto.getDeadline());
+        task.setDeadline(dto.getDeadline());
         task.setSubObject(subObject);
+
+        if (dto.getTemplateId() != null) {
+            checklistTemplateRepository.findById(dto.getTemplateId())
+                    .ifPresent(task::setTemplate);
+        }
 
         // Auto-Index logic with Shifting
         if (dto.getIndex() == null) {

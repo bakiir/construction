@@ -31,6 +31,8 @@ public interface TaskMapper {
     @Mapping(source = "subObject.constructionObject.project.projectManager.id", target = "projectManagerId")
     @Mapping(source = "subObject.constructionObject.project.foremen", target = "projectForemanIds")
     @Mapping(source = "subObject.workers", target = "subObjectWorkerIds")
+    @Mapping(source = "template.id", target = "templateId")
+    @Mapping(source = "template.name", target = "templateName")
     TaskDto toDto(Task task);
 
     ChecklistItemDto toChecklistItemDto(ChecklistItem item);

@@ -37,6 +37,10 @@ public class TaskDto {
     private String rejectedByFullName;
     private String foremanNote;
 
+    // Template info
+    private Long templateId;
+    private String templateName;
+
     // Filtering info
     private Long projectManagerId;
     private List<Long> projectForemanIds;

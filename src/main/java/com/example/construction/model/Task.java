@@ -69,4 +69,8 @@ public class Task {
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = null;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_id")
+    private ChecklistTemplate template;
+
 }

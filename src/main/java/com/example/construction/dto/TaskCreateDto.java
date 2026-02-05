@@ -32,4 +32,6 @@ public class TaskCreateDto {
     private Set<Long> assigneeIds;
 
     private java.util.List<ChecklistItemDto> checklist;
+
+    private Long templateId;
 }

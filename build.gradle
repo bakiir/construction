@@ -45,6 +45,8 @@ dependencies {
 		exclude group: 'com.fasterxml.jackson.module', module: 'jackson-module-jaxb-annotations' // Exclude legacy javax module
 	}
 
+	implementation 'me.paulschwarz:spring-dotenv:5.1.0'
+
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	annotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
 	testImplementation 'org.springframework.boot:spring-boot-starter-test' // Simplified test dependency

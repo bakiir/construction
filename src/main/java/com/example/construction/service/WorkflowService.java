@@ -42,29 +42,62 @@ public class WorkflowService {
         }
 
         // Validate submitter is assigned to the task
+        // Validate submitter permissions
         if (submitterEmail != null) {
             User submitter = findUserByEmail(submitterEmail);
-            if (submitter != null &&
-                    (submitter.getRole() == com.example.construction.Enums.Role.WORKER ||
-                            submitter.getRole() == com.example.construction.Enums.Role.FOREMAN)) {
-                if (!task.getAssignees().contains(submitter)) {
-                    throw new IllegalStateException(
-                            "Вы не назначены на эту задачу и не можете отправить её на проверку.");
+            if (submitter != null) {
+                if (submitter.getRole() == com.example.construction.Enums.Role.WORKER) {
+                    if (!task.getAssignees().contains(submitter)) {
+                        throw new IllegalStateException(
+                                "Вы не назначены на эту задачу и не можете отправить её на проверку.");
+                    }
+                } else if (submitter.getRole() == com.example.construction.Enums.Role.FOREMAN) {
+                    // Foreman can submit if assigned OR if they are a foreman on the project
+                    boolean isAssigned = task.getAssignees().contains(submitter);
+                    boolean isProjectForeman = false;
+                    if (task.getSubObject().getConstructionObject().getProject().getForemen().contains(submitter)) {
+                        isProjectForeman = true;
+                    }
+                    if (!isAssigned && !isProjectForeman) {
+                        throw new IllegalStateException(
+                                "Вы не являетесь исполнителем или прорабом проекта для этой задачи.");
+                    }
                 }
             }
         }
 
         // Validate checklists
-        if (!checklistService.areAllChecklistsCompleted(taskId)) {
-            throw new IllegalStateException("Not all checklist items are completed or photos are missing.");
+        boolean isWorkerSubmit = false;
+        if (submitterEmail != null) {
+            User submitter = findUserByEmail(submitterEmail);
+            if (submitter != null && submitter.getRole() == com.example.construction.Enums.Role.WORKER) {
+                isWorkerSubmit = true;
+            }
         }
 
-        // Validate final photo
-        if (task.getFinalPhotoUrl() == null) {
-            throw new IllegalStateException("Final photo is mandatory for submission.");
+        if (isWorkerSubmit) {
+            // Worker: Only check if checkboxes are ticked (photos optional at this stage)
+            if (!checklistService.areAllChecklistsChecked(taskId)) {
+                throw new IllegalStateException("Not all checklist items are marked as completed.");
+            }
+            // Worker: Final photo is optional at this stage (foreman can add it later)
+        } else {
+            // Foreman/PM: Strict check (checkboxes + photos)
+            if (!checklistService.areAllChecklistsCompleted(taskId)) {
+                throw new IllegalStateException("Not all checklist items are completed or photos are missing.");
+            }
+            // Foreman/PM: Final photo is mandatory
+            if (task.getFinalPhotoUrl() == null) {
+                throw new IllegalStateException("Final photo is mandatory for submission.");
+            }
         }
 
-        task.setStatus(TaskStatus.UNDER_REVIEW_FOREMAN);
+        if (isWorkerSubmit) {
+            task.setStatus(TaskStatus.UNDER_REVIEW_FOREMAN);
+        } else {
+            // Foreman submitting -> Goes directly to PM
+            task.setStatus(TaskStatus.UNDER_REVIEW_PM);
+        }
 
         // Handle submission comment via Report
         if (submissionDto != null && submissionDto.getComment() != null) {
@@ -89,14 +122,22 @@ public class WorkflowService {
 
         taskRepository.save(task);
 
-        // Notify project foremen
-        Project project = task.getSubObject().getConstructionObject().getProject();
-        if (project != null) {
-            Set<User> foremen = project.getForemen();
-            if (foremen != null) {
-                foremen.forEach(foreman -> notificationService.createNotification(foreman,
-                        "Задача '" + task.getTitle() + "' готова к проверке.", task));
+        if (isWorkerSubmit) {
+            // Notify project foremen
+            Project project = task.getSubObject().getConstructionObject().getProject();
+            if (project != null) {
+                Set<User> foremen = project.getForemen();
+                if (foremen != null) {
+                    foremen.forEach(foreman -> notificationService.createNotification(foreman,
+                            "Задача '" + task.getTitle() + "' готова к проверке.", task));
+                }
             }
+        } else {
+            // Notify PMs
+            List<User> pms = userRepository.findAllByRole(Role.PM);
+            pms.forEach(pm -> notificationService.createNotification(pm,
+                    "Прораб отправил задачу '" + task.getTitle() + "' на финальную проверку.",
+                    task));
         }
     }
 
@@ -111,6 +152,15 @@ public class WorkflowService {
 
         if (approverRole == Role.FOREMAN
                 && (currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN || currentStatus == TaskStatus.REWORK_PM)) {
+            // Foreman is approving -> Handing over to PM
+            // MUST ensure all photos are present now
+            if (!checklistService.areAllChecklistsCompleted(taskId)) {
+                throw new IllegalStateException("Cannot approve: Not all checklist items have required photos.");
+            }
+            if (task.getFinalPhotoUrl() == null) {
+                throw new IllegalStateException("Cannot approve: Final photo is missing.");
+            }
+
             task.setStatus(TaskStatus.UNDER_REVIEW_PM);
             createApprovalRecord(task, approver, "APPROVED", comment);
 

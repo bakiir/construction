@@ -38,7 +38,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/tasks/{taskId}/submit")
-    @PreAuthorize("hasRole('WORKER')")
+    @PreAuthorize("hasAnyRole('WORKER', 'FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<Void> submitTask(
             @PathVariable Long taskId,
             @RequestBody(required = false) ApprovalDto approvalDto,

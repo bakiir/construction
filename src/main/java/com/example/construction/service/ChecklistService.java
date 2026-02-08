@@ -2,11 +2,14 @@ package com.example.construction.service;
 
 import com.example.construction.model.ChecklistItem;
 import com.example.construction.model.Task;
+import com.example.construction.model.User;
 import com.example.construction.reposirtories.ChecklistItemRepository;
 import com.example.construction.reposirtories.TaskRepository;
+import com.example.construction.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -17,6 +20,8 @@ public class ChecklistService {
     private final ChecklistItemRepository checklistItemRepository;
     private final TaskRepository taskRepository;
     private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
+    private final com.example.construction.reposirtories.UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<ChecklistItem> getChecklistsByTaskId(Long taskId) {
@@ -71,7 +76,48 @@ public class ChecklistService {
                 .orElseThrow(() -> new RuntimeException("Checklist item not found"));
 
         item.setIsCompleted(completed);
-        return checklistItemRepository.save(item);
+        ChecklistItem savedItem = checklistItemRepository.save(item);
+
+        if (Boolean.TRUE.equals(completed)) {
+            try {
+                String email = SecurityContextHolder.getContext().getAuthentication().getName();
+                userRepository.findByEmail(email).ifPresent(user -> {
+                    if (user.getRole() == com.example.construction.Enums.Role.WORKER) {
+                        notifyForeman(item, user);
+                    }
+                });
+            } catch (Exception e) {
+                // Log error but don't fail the transaction
+                System.err.println("Failed to send notification: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return savedItem;
+    }
+
+    private void notifyForeman(ChecklistItem item, User worker) {
+        Task task = item.getTask();
+        // Check SubObject -> ConstructionObject -> LeadForeman
+        if (task.getSubObject() != null && task.getSubObject().getConstructionObject() != null) {
+            com.example.construction.model.ConstructionObject co = task.getSubObject().getConstructionObject();
+            if (co.getLeadForeman() != null) {
+                notificationService.createNotification(
+                        co.getLeadForeman(),
+                        "Работник " + worker.getFullName() + " выполнил пункт: " + item.getDescription(),
+                        task);
+                return;
+            }
+            // Fallback to Project Foremen
+            if (co.getProject() != null && co.getProject().getForemen() != null) {
+                for (User foreman : co.getProject().getForemen()) {
+                    notificationService.createNotification(
+                            foreman,
+                            "Работник " + worker.getFullName() + " выполнил пункт: " + item.getDescription(),
+                            task);
+                }
+            }
+        }
     }
 
     @Transactional
@@ -85,6 +131,15 @@ public class ChecklistService {
         String storedFileName = fileStorageService.storeBase64File(photoUrl);
         item.setPhotoUrl(storedFileName);
         return checklistItemRepository.save(item);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean areAllChecklistsChecked(Long taskId) {
+        List<ChecklistItem> items = checklistItemRepository.findByTaskIdOrderByOrderIndexAsc(taskId);
+        if (items.isEmpty())
+            return true;
+        // Check ONLY if IS_COMPLETED is true, ignore photos
+        return items.stream().allMatch(item -> Boolean.TRUE.equals(item.getIsCompleted()));
     }
 
     @Transactional(readOnly = true)

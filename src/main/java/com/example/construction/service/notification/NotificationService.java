@@ -31,6 +31,11 @@ public class NotificationService {
             com.example.construction.Enums.NotificationCategory category, com.example.construction.model.Task task) {
         Notification notification = new Notification();
         notification.setUser(user);
+
+        // Truncate message to 255 chars to avoid SQL errors
+        if (message != null && message.length() > 255) {
+            message = message.substring(0, 252) + "...";
+        }
         notification.setMessage(message);
         notification.setTask(task);
         if (task != null && task.getSubObject() != null && task.getSubObject().getConstructionObject() != null) {

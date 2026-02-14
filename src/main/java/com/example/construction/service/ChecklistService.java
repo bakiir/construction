@@ -76,6 +76,9 @@ public class ChecklistService {
                 .orElseThrow(() -> new RuntimeException("Checklist item not found"));
 
         item.setIsCompleted(completed);
+        if (Boolean.TRUE.equals(completed)) {
+            item.setRemark(null);
+        }
         ChecklistItem savedItem = checklistItemRepository.save(item);
 
         if (Boolean.TRUE.equals(completed)) {

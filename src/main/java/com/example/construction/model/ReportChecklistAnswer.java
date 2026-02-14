@@ -20,6 +20,7 @@ public class ReportChecklistAnswer {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "report_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Report report;
 
     @ManyToOne(fetch = FetchType.LAZY)

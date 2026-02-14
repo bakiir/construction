@@ -24,6 +24,7 @@ public class Report {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false, unique = true)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "report", "hibernateLazyInitializer", "handler" })
     private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)

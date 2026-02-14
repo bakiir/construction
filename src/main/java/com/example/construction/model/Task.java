@@ -41,6 +41,7 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_obj_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "tasks", "hibernateLazyInitializer", "handler" })
     private SubObject subObject;
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)

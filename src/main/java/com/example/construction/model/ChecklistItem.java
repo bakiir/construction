@@ -18,6 +18,7 @@ public class ChecklistItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Task task;
 
     @Column(nullable = false, length = 500)

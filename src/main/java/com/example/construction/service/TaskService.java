@@ -41,6 +41,30 @@ public class TaskService {
     private final FileStorageService fileStorageService;
 
     @org.springframework.transaction.annotation.Transactional
+    public Task createTaskFromTemplate(Task task) {
+        // Initial save to get ID
+        Task savedTask = taskRepository.save(task);
+
+        // Auto-Index logic: appends to the end
+        List<Task> existingTasks = taskRepository.findBySubObjectId(task.getSubObject().getId());
+
+        // Filter out the current task if it's already in the list
+        long count = existingTasks.stream().filter(t -> !t.getId().equals(savedTask.getId())).count();
+        savedTask.setIndex((int) count);
+
+        // Set default status
+        savedTask.setStatus(TaskStatus.LOCKED); // Will be updated by recalculate
+        if (savedTask.getTaskType() == null) {
+            savedTask.setTaskType(com.example.construction.Enums.TaskType.SEQUENTIAL);
+        }
+
+        Task finalSavedTask = taskRepository.save(savedTask);
+        recalculateTaskStatuses(finalSavedTask.getSubObject().getId());
+
+        return finalSavedTask;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public TaskDto create(TaskCreateDto dto) {
         SubObject subObject = subObjectRepository.findById(dto.getSubObjectId())
                 .orElseThrow(() -> new RuntimeException("SubObject not found"));

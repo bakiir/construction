@@ -23,6 +23,7 @@ public class SubObject {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "object_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "subObjects", "hibernateLazyInitializer", "handler" })
     private ConstructionObject constructionObject;
 
     private String name;

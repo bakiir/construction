@@ -42,6 +42,13 @@ public class SubObjectTemplateController {
                 .ok(templateService.addTaskTemplateToSubObject(templateId, taskName, checklistTemplateId, orderIndex));
     }
 
+    @DeleteMapping("/tasks/{taskId}")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteTaskTemplate(@PathVariable Long taskId) {
+        templateService.deleteTaskTemplate(taskId);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{templateId}")
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
     public ResponseEntity<Void> deleteTemplate(@PathVariable Long templateId) {

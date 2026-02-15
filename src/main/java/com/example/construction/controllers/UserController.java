@@ -23,13 +23,13 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ESTIMATOR')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'PM', 'SUPER_ADMIN')")
     public UserDto getById(@PathVariable Long id) {
         return service.getById(id);
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ESTIMATOR')")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'PM', 'SUPER_ADMIN')")
     public List<UserDto> getAll() {
         return service.getAll();
     }

@@ -45,4 +45,26 @@ public class ChecklistTemplateController {
         templateRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{id}")
+    public ChecklistTemplate updateTemplate(@PathVariable Long id, @RequestBody ChecklistTemplate template) {
+        return templateRepository.findById(id)
+                .map(existingTemplate -> {
+                    existingTemplate.setName(template.getName());
+
+                    // Clear existing items to handle removal/replacement
+                    if (existingTemplate.getItems() != null) {
+                        existingTemplate.getItems().clear();
+                    }
+
+                    if (template.getItems() != null) {
+                        for (ChecklistTemplateItem item : template.getItems()) {
+                            item.setTemplate(existingTemplate);
+                            existingTemplate.getItems().add(item);
+                        }
+                    }
+                    return templateRepository.save(existingTemplate);
+                })
+                .orElseThrow(() -> new RuntimeException("Template not found"));
+    }
 }

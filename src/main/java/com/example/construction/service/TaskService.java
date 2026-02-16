@@ -294,7 +294,7 @@ public class TaskService {
             existingItems.stream()
                     .filter(item -> !dtoItemIds.contains(item.getId()))
                     .forEach(item -> {
-                        fileStorageService.deleteFile(item.getPhotoUrl());
+                        fileStorageService.delete(item.getPhotoUrl());
                         checklistItemRepository.delete(item);
                     });
 
@@ -409,12 +409,13 @@ public class TaskService {
         taskRepository.findById(id).ifPresent(task -> {
             validateTaskAccess(task);
             // Delete associated files from storage
-            fileStorageService.deleteFile(task.getFinalPhotoUrl());
+            // Delete associated files from storage
+            fileStorageService.delete(task.getFinalPhotoUrl());
             if (task.getChecklistItems() != null) {
-                task.getChecklistItems().forEach(item -> fileStorageService.deleteFile(item.getPhotoUrl()));
+                task.getChecklistItems().forEach(item -> fileStorageService.delete(item.getPhotoUrl()));
             }
             if (task.getReport() != null && task.getReport().getPhotos() != null) {
-                task.getReport().getPhotos().forEach(photo -> fileStorageService.deleteFile(photo.getFilePath()));
+                task.getReport().getPhotos().forEach(photo -> fileStorageService.delete(photo.getFilePath()));
             }
 
             Long subObjectId = task.getSubObject().getId();
@@ -470,10 +471,19 @@ public class TaskService {
 
         // Delete old final photo from disk if it exists
         if (task.getFinalPhotoUrl() != null) {
-            fileStorageService.deleteFile(task.getFinalPhotoUrl());
+            fileStorageService.delete(task.getFinalPhotoUrl());
         }
 
-        String storedFileName = fileStorageService.storeBase64File(photoUrl);
+        String extension = ".png";
+        if (photoUrl.contains("image/jpeg")) {
+            extension = ".jpg";
+        } else if (photoUrl.contains("image/webp")) {
+            extension = ".webp";
+        }
+
+        Base64MultipartFile file = new Base64MultipartFile(photoUrl, "task-final-" + taskId + extension);
+        String storedFileName = fileStorageService.upload(file, "tasks");
+
         task.setFinalPhotoUrl(storedFileName);
         task.setUpdatedAt(LocalDateTime.now());
         taskRepository.save(task);

@@ -49,6 +49,10 @@ dependencies {
 
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	annotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
+	
+	implementation platform('software.amazon.awssdk:bom:2.21.0')
+	implementation 'software.amazon.awssdk:s3'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test' // Simplified test dependency
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

@@ -31,7 +31,7 @@ public class ReportService {
         try {
             if (files != null) {
                 for (MultipartFile file : files) {
-                    uploadedFileNames.add(fileStorageService.storeFile(file));
+                    uploadedFileNames.add(fileStorageService.upload(file, "reports"));
                 }
             }
 
@@ -42,7 +42,7 @@ public class ReportService {
             // 3. Compensation: Delete uploaded files if DB save fails
             for (String fileName : uploadedFileNames) {
                 try {
-                    fileStorageService.deleteFile(fileName);
+                    fileStorageService.delete(fileName);
                 } catch (Exception deleteEx) {
                     System.err.println("Failed to cleanup file: " + fileName);
                 }

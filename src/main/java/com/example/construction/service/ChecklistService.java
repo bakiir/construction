@@ -65,7 +65,7 @@ public class ChecklistService {
     @Transactional
     public void deleteChecklistItem(Long id) {
         checklistItemRepository.findById(id).ifPresent(item -> {
-            fileStorageService.deleteFile(item.getPhotoUrl());
+            fileStorageService.delete(item.getPhotoUrl());
             checklistItemRepository.delete(item);
         });
     }
@@ -129,9 +129,19 @@ public class ChecklistService {
                 .orElseThrow(() -> new RuntimeException("Checklist item not found"));
 
         // Delete old photo file if it exists
-        fileStorageService.deleteFile(item.getPhotoUrl());
+        fileStorageService.delete(item.getPhotoUrl());
 
-        String storedFileName = fileStorageService.storeBase64File(photoUrl);
+        String extension = ".png";
+        if (photoUrl.contains("image/jpeg")) {
+            extension = ".jpg";
+        } else if (photoUrl.contains("image/webp")) {
+            extension = ".webp";
+        }
+
+        // Convert Base64 string to MultipartFile
+        Base64MultipartFile file = new Base64MultipartFile(photoUrl, "checklist-" + id + extension);
+
+        String storedFileName = fileStorageService.upload(file, "checklists");
         item.setPhotoUrl(storedFileName);
         return checklistItemRepository.save(item);
     }

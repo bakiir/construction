@@ -29,7 +29,7 @@ public class ChecklistService {
     }
 
     @Transactional
-    public ChecklistItem createChecklistItem(Long taskId, String description, Integer orderIndex,
+    public ChecklistItem createChecklistItem(Long taskId, String description, String methodology, Integer orderIndex,
             Boolean isPhotoRequired) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
@@ -37,6 +37,7 @@ public class ChecklistService {
         ChecklistItem item = new ChecklistItem();
         item.setTask(task);
         item.setDescription(description);
+        item.setMethodology(methodology);
         item.setOrderIndex(orderIndex);
         item.setIsCompleted(false);
         item.setIsPhotoRequired(isPhotoRequired != null ? isPhotoRequired : false);
@@ -45,12 +46,16 @@ public class ChecklistService {
     }
 
     @Transactional
-    public ChecklistItem updateChecklistItem(Long id, String description, Integer orderIndex, Boolean isPhotoRequired) {
+    public ChecklistItem updateChecklistItem(Long id, String description, String methodology, Integer orderIndex,
+            Boolean isPhotoRequired) {
         ChecklistItem item = checklistItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Checklist item not found"));
 
         if (description != null) {
             item.setDescription(description);
+        }
+        if (methodology != null) {
+            item.setMethodology(methodology);
         }
         if (orderIndex != null) {
             item.setOrderIndex(orderIndex);

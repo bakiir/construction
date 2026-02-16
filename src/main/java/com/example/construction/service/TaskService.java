@@ -157,6 +157,7 @@ public class TaskService {
                 ChecklistItem item = new ChecklistItem();
                 item.setTask(savedTask);
                 item.setDescription(itemDto.getDescription());
+                item.setMethodology(itemDto.getMethodology());
                 item.setIsPhotoRequired(itemDto.getIsPhotoRequired() != null ? itemDto.getIsPhotoRequired() : false);
                 item.setOrderIndex(i);
                 item.setIsCompleted(false);
@@ -312,6 +313,7 @@ public class TaskService {
                 }
 
                 item.setDescription(itemDto.getDescription());
+                item.setMethodology(itemDto.getMethodology());
                 item.setIsPhotoRequired(itemDto.getIsPhotoRequired() != null ? itemDto.getIsPhotoRequired() : false);
                 item.setOrderIndex(i);
                 if (itemDto.getId() == null) {
@@ -413,6 +415,8 @@ public class TaskService {
             fileStorageService.delete(task.getFinalPhotoUrl());
             if (task.getChecklistItems() != null) {
                 task.getChecklistItems().forEach(item -> fileStorageService.delete(item.getPhotoUrl()));
+                checklistItemRepository.deleteAll(task.getChecklistItems());
+                task.getChecklistItems().clear();
             }
             if (task.getReport() != null && task.getReport().getPhotos() != null) {
                 task.getReport().getPhotos().forEach(photo -> fileStorageService.delete(photo.getFilePath()));

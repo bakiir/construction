@@ -99,6 +99,7 @@ public class TemplateService {
                     checklistService.createChecklistItem(
                             savedTask.getId(),
                             item.getDescription(),
+                            item.getMethodology(),
                             item.getOrderIndex(),
                             item.getIsPhotoRequired());
                 });

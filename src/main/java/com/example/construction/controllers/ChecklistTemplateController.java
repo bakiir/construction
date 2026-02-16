@@ -16,6 +16,7 @@ import java.util.List;
 public class ChecklistTemplateController {
 
     private final ChecklistTemplateRepository templateRepository;
+    private final com.example.construction.reposirtories.TaskRepository taskRepository;
 
     @GetMapping
     public List<ChecklistTemplate> getAllTemplates() {
@@ -34,6 +35,13 @@ public class ChecklistTemplateController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTemplate(@PathVariable Long id) {
+        // Break link with tasks
+        List<com.example.construction.model.Task> tasks = taskRepository.findByTemplateId(id);
+        for (com.example.construction.model.Task task : tasks) {
+            task.setTemplate(null);
+        }
+        taskRepository.saveAll(tasks);
+
         templateRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }

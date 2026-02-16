@@ -11,4 +11,5 @@ public class ChecklistItemDto {
     private String photoUrl;
     private String remark;
     private Boolean isPhotoRequired;
+    private String methodology;
 }

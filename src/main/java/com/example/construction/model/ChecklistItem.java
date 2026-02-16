@@ -19,6 +19,8 @@ public class ChecklistItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnore
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
     private Task task;
 
     @Column(nullable = false, length = 500)
@@ -35,6 +37,9 @@ public class ChecklistItem {
 
     @Column(columnDefinition = "TEXT")
     private String remark;
+
+    @Column(columnDefinition = "TEXT")
+    private String methodology;
 
     @Column(nullable = false)
     private Boolean isPhotoRequired = false;

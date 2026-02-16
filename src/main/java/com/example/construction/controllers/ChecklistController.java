@@ -31,7 +31,8 @@ public class ChecklistController {
     @PostMapping("/task/{taskId}")
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<ChecklistItemDto> createItem(@PathVariable Long taskId, @RequestBody ChecklistItemDto dto) {
-        ChecklistItem item = checklistService.createChecklistItem(taskId, dto.getDescription(), dto.getOrderIndex(),
+        ChecklistItem item = checklistService.createChecklistItem(taskId, dto.getDescription(), dto.getMethodology(),
+                dto.getOrderIndex(),
                 dto.getIsPhotoRequired());
         return ResponseEntity.ok(toDTO(item));
     }
@@ -39,7 +40,8 @@ public class ChecklistController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'FOREMAN', 'PM', 'SUPER_ADMIN')")
     public ResponseEntity<ChecklistItemDto> updateItem(@PathVariable Long id, @RequestBody ChecklistItemDto dto) {
-        ChecklistItem item = checklistService.updateChecklistItem(id, dto.getDescription(), dto.getOrderIndex(),
+        ChecklistItem item = checklistService.updateChecklistItem(id, dto.getDescription(), dto.getMethodology(),
+                dto.getOrderIndex(),
                 dto.getIsPhotoRequired());
         return ResponseEntity.ok(toDTO(item));
     }
@@ -88,6 +90,7 @@ public class ChecklistController {
         dto.setPhotoUrl(item.getPhotoUrl());
         dto.setRemark(item.getRemark());
         dto.setIsPhotoRequired(item.getIsPhotoRequired());
+        dto.setMethodology(item.getMethodology());
         return dto;
     }
 }

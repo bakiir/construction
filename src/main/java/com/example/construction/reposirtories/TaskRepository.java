@@ -12,4 +12,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findBySubObjectId(Long id);
 
     List<Task> findBySubObjectIdAndIndex(Long subObjectId, Integer index);
+
+    List<Task> findByTemplateId(Long templateId);
 }

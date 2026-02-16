@@ -37,7 +37,7 @@ public class Base64MultipartFile implements MultipartFile {
     private String extractContentType(String header) {
         if (header.contains("image/png"))
             return "image/png";
-        if (header.contains("image/jpeg"))
+        if (header.contains("image/jpeg") || header.contains("image/jpg"))
             return "image/jpeg";
         if (header.contains("image/webp"))
             return "image/webp";

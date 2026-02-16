@@ -1,8 +1,8 @@
 package com.example.construction.controllers;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.example.construction.service.FileStorageService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,41 +10,47 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.MalformedURLException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/files")
+@RequiredArgsConstructor
 public class FileController {
 
-    private final Path storageDir;
+    private final FileStorageService fileStorageService;
 
-    public FileController(@Value("${file.upload-dir}") String uploadDir) {
-        this.storageDir = Paths.get(uploadDir).toAbsolutePath().normalize();
-    } 
-
-    @GetMapping("/{fileName}")
-    public ResponseEntity<Resource> getFile(@PathVariable String fileName) {
+    @GetMapping("/{*path}")
+    public ResponseEntity<Resource> getFile(@PathVariable String path) {
         try {
-            Path filePath = storageDir.resolve(fileName).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                return ResponseEntity.notFound().build();
+            // Remove leading slash if present
+            if (path.startsWith("/")) {
+                path = path.substring(1);
             }
 
-            String contentType = Files.probeContentType(filePath);
-            MediaType mediaType = contentType != null ? MediaType.parseMediaType(contentType) : MediaType.APPLICATION_OCTET_STREAM;
+            Resource resource = fileStorageService.download(path);
 
-            return ResponseEntity
-                    .ok()
-                    .contentType(mediaType)
+            String contentType = "application/octet-stream";
+            try {
+                if (resource.exists() && resource.isFile()) {
+                    contentType = Files.probeContentType(resource.getFile().toPath());
+                } else {
+                    // Start basic detection based on extension
+                    if (path.endsWith(".jpg") || path.endsWith(".jpeg"))
+                        contentType = "image/jpeg";
+                    else if (path.endsWith(".png"))
+                        contentType = "image/png";
+                    else if (path.endsWith(".pdf"))
+                        contentType = "application/pdf";
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
                     .body(resource);
-        } catch (MalformedURLException e) {
-            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.notFound().build();
         }
     }
 }

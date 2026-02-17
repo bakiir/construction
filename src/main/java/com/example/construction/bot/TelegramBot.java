@@ -36,13 +36,17 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            String text = update.getMessage().getText();
-            Long chatId = update.getMessage().getChatId();
+        try {
+            if (update.hasMessage() && update.getMessage().hasText()) {
+                String text = update.getMessage().getText();
+                Long chatId = update.getMessage().getChatId();
 
-            if (text.startsWith("/start")) {
-                handleStartCommand(chatId, text);
+                if (text.startsWith("/start")) {
+                    handleStartCommand(chatId, text);
+                }
             }
+        } catch (Exception e) {
+            log.error("Error while processing update", e);
         }
     }
 

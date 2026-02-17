@@ -15,9 +15,14 @@ public class TelegramBotConfig {
     private final TelegramBot telegramBot;
 
     @PostConstruct
-    public void register() throws TelegramApiException {
-        TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
-
-        api.registerBot(telegramBot);
+    public void register() {
+        try {
+            TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
+            api.registerBot(telegramBot);
+        } catch (TelegramApiException e) {
+            // Log error but do not crash the application
+            // Use a logger if available, or print stack trace for now
+            e.printStackTrace(); 
+        }
     }
 }

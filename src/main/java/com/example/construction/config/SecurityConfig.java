@@ -40,6 +40,7 @@ public class SecurityConfig {
                         s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/files/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/files/**").permitAll() // Keep specifically for clarity/redundancy if needed, or just rely on the line above
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/**").authenticated()

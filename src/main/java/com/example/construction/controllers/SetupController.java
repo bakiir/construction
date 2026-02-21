@@ -18,23 +18,23 @@ public class SetupController {
 
     @PostMapping("/setup")
     public ResponseEntity<String> setupInitialUsers() {
-        createIfNotExists("superadmin@bauberg.com", "123456", "Super Admin", Role.SUPER_ADMIN);
-        createIfNotExists("pm@bauberg.com", "123456", "Project Manager", Role.PM);
-        createIfNotExists("estimator@bauberg.com", "123456", "Estimator", Role.ESTIMATOR);
-        createIfNotExists("foreman@bauberg.com", "123456", "Foreman", Role.FOREMAN);
-        createIfNotExists("worker@bauberg.com", "123456", "Worker", Role.WORKER);
+        createIfNotExists("0000000001", "123456", "Super Admin", Role.SUPER_ADMIN);
+        createIfNotExists("0000000002", "123456", "Project Manager", Role.PM);
+        createIfNotExists("0000000003", "123456", "Estimator", Role.ESTIMATOR);
+        createIfNotExists("0000000004", "123456", "Foreman", Role.FOREMAN);
+        createIfNotExists("0000000005", "123456", "Worker", Role.WORKER);
 
         return ResponseEntity.ok("Initial users setup complete");
     }
 
-    private void createIfNotExists(String email, String password, String fullName, Role role) {
+    private void createIfNotExists(String phone, String password, String fullName, Role role) {
         try {
-            userService.getUserIdByEmail(email);
-            // User exists, skip or maybe update password? For now, skip.
+            userService.getUserIdByPhone(phone);
+            // User exists, skip
         } catch (RuntimeException e) {
             // User not found, create
             UserCreateDto dto = new UserCreateDto();
-            dto.setEmail(email);
+            dto.setPhone(phone);
             dto.setPassword(password);
             dto.setFullName(fullName);
             dto.setRole(role);

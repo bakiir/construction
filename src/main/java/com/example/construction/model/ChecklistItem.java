@@ -43,4 +43,7 @@ public class ChecklistItem {
 
     @Column(nullable = false)
     private Boolean isPhotoRequired = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String methodology;
 }

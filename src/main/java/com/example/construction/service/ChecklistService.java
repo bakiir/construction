@@ -88,8 +88,8 @@ public class ChecklistService {
 
         if (Boolean.TRUE.equals(completed)) {
             try {
-                String email = SecurityContextHolder.getContext().getAuthentication().getName();
-                userRepository.findByEmail(email).ifPresent(user -> {
+                String phone = SecurityContextHolder.getContext().getAuthentication().getName();
+                userRepository.findByPhone(phone).ifPresent(user -> {
                     if (user.getRole() == com.example.construction.Enums.Role.WORKER) {
                         notifyForeman(item, user);
                     }

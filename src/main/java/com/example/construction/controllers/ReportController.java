@@ -5,13 +5,11 @@ import com.example.construction.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -54,8 +52,8 @@ public class ReportController {
                 return ResponseEntity.badRequest().build();
             }
 
-            String authorEmail = authentication.getName();
-            reportService.createReport(taskId, reportDto, files, authorEmail);
+            String authorPhone = authentication.getName();
+            reportService.createReport(taskId, reportDto, files, authorPhone);
 
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {

@@ -137,6 +137,10 @@ public class TaskService {
                     throw new IllegalArgumentException(
                             "Worker " + assignee.getFullName() + " is not assigned to this sub-object");
                 }
+                if (assignee.getStatus() != com.example.construction.Enums.UserStatus.ACTIVE) {
+                    throw new IllegalArgumentException(
+                            "Cannot assign worker " + assignee.getFullName() + " with status: " + assignee.getStatus());
+                }
             }
 
             // Validate parallel worker assignment
@@ -270,6 +274,10 @@ public class TaskService {
                 if (!subObjectWorkers.contains(assignee)) {
                     throw new IllegalArgumentException(
                             "Worker " + assignee.getFullName() + " is not assigned to this sub-object");
+                }
+                if (assignee.getStatus() != com.example.construction.Enums.UserStatus.ACTIVE) {
+                    throw new IllegalArgumentException(
+                            "Cannot assign worker " + assignee.getFullName() + " with status: " + assignee.getStatus());
                 }
             }
 
@@ -505,9 +513,9 @@ public class TaskService {
     }
 
     private void validateTaskAccess(Task task) {
-        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+        String phone = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
                 .getName();
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getRole() == com.example.construction.Enums.Role.SUPER_ADMIN)
             return;

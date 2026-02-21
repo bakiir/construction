@@ -35,6 +35,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'PM', 'SUPER_ADMIN')")
     public UserDto update(
             @PathVariable Long id,
             @RequestBody UserUpdateDto dto) {
@@ -42,6 +43,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'PM', 'SUPER_ADMIN')")
     public void deactivate(@PathVariable Long id) {
         service.deactivate(id);
     }

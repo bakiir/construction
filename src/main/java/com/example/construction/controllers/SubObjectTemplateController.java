@@ -25,6 +25,14 @@ public class SubObjectTemplateController {
         return ResponseEntity.ok(templateService.createSubObjectTemplate(name));
     }
 
+    @PutMapping("/{templateId}")
+    @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN')")
+    public ResponseEntity<SubObjectTemplate> updateTemplate(
+            @PathVariable Long templateId,
+            @RequestParam String name) {
+        return ResponseEntity.ok(templateService.updateSubObjectTemplate(templateId, name));
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ESTIMATOR', 'SUPER_ADMIN', 'PM', 'FOREMAN')")
     public ResponseEntity<List<SubObjectTemplate>> getAllTemplates() {

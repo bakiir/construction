@@ -5,7 +5,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Configuration
@@ -19,10 +18,10 @@ public class TelegramBotConfig {
         try {
             TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
             api.registerBot(telegramBot);
-        } catch (TelegramApiException e) {
-            // Log error but do not crash the application
-            // Use a logger if available, or print stack trace for now
-            e.printStackTrace(); 
+        } catch (Exception e) {
+            System.err.println(
+                    "❌ ERROR: Failed to register Telegram Bot. App will continue but notifications won't work: "
+                            + e.getMessage());
         }
     }
 }

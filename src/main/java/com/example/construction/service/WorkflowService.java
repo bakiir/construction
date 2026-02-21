@@ -31,7 +31,7 @@ public class WorkflowService {
     private final TaskService taskService;
 
     @Transactional
-    public void submitTaskForReview(Long taskId, ApprovalDto submissionDto, String submitterEmail) {
+    public void submitTaskForReview(Long taskId, ApprovalDto submissionDto, String submitterPhone) {
         Task task = findTaskById(taskId);
 
         if (task.getStatus() != TaskStatus.ACTIVE
@@ -43,8 +43,8 @@ public class WorkflowService {
 
         // Validate submitter is assigned to the task
         // Validate submitter permissions
-        if (submitterEmail != null) {
-            User submitter = findUserByEmail(submitterEmail);
+        if (submitterPhone != null) {
+            User submitter = findUserByPhone(submitterPhone);
             if (submitter != null) {
                 if (submitter.getRole() == com.example.construction.Enums.Role.WORKER) {
                     if (!task.getAssignees().contains(submitter)) {
@@ -68,8 +68,8 @@ public class WorkflowService {
 
         // Validate checklists
         boolean isWorkerSubmit = false;
-        if (submitterEmail != null) {
-            User submitter = findUserByEmail(submitterEmail);
+        if (submitterPhone != null) {
+            User submitter = findUserByPhone(submitterPhone);
             if (submitter != null && submitter.getRole() == com.example.construction.Enums.Role.WORKER) {
                 isWorkerSubmit = true;
             }
@@ -106,9 +106,9 @@ public class WorkflowService {
                 report = new com.example.construction.model.Report();
                 report.setTask(task);
 
-                // Set author from submitterEmail if available, otherwise fallback to assignee
-                if (submitterEmail != null) {
-                    report.setAuthor(findUserByEmail(submitterEmail));
+                // Set author from submitterPhone if available, otherwise fallback to assignee
+                if (submitterPhone != null) {
+                    report.setAuthor(findUserByPhone(submitterPhone));
                 } else if (!task.getAssignees().isEmpty()) {
                     report.setAuthor(task.getAssignees().iterator().next());
                 } else {
@@ -142,16 +142,16 @@ public class WorkflowService {
     }
 
     @Transactional
-    public void approveTask(Long taskId, String approverEmail, ApprovalDto approvalDto) {
+    public void approveTask(Long taskId, String approverPhone, ApprovalDto approvalDto) {
         Task task = findTaskById(taskId);
-        User approver = findUserByEmail(approverEmail);
+        User approver = findUserByPhone(approverPhone);
 
         TaskStatus currentStatus = task.getStatus();
         Role approverRole = approver.getRole();
         String comment = (approvalDto != null) ? approvalDto.getComment() : null;
 
         if (approverRole == Role.FOREMAN
-                && (currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN || currentStatus == TaskStatus.REWORK_PM)) {
+                && currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN) {
             // Foreman is approving -> Handing over to PM
             // MUST ensure all photos are present now
             if (!checklistService.areAllChecklistsCompleted(taskId)) {
@@ -182,16 +182,16 @@ public class WorkflowService {
             taskService.recalculateTaskStatuses(task.getSubObject().getId());
         } else {
             throw new IllegalStateException(
-                    "User " + approverEmail + " cannot approve this task at its current status.");
+                    "User " + approverPhone + " cannot approve this task at its current status.");
         }
 
         taskRepository.save(task);
     }
 
     @Transactional
-    public void rejectTask(Long taskId, String approverEmail, ApprovalDto approvalDto) {
+    public void rejectTask(Long taskId, String approverPhone, ApprovalDto approvalDto) {
         Task task = findTaskById(taskId);
-        User approver = findUserByEmail(approverEmail);
+        User approver = findUserByPhone(approverPhone);
 
         // Validate that rejection comment is provided
         if (approvalDto == null || approvalDto.getComment() == null || approvalDto.getComment().trim().isEmpty()) {
@@ -202,7 +202,7 @@ public class WorkflowService {
         Role approverRole = approver.getRole();
 
         if (approverRole == Role.FOREMAN
-                && (currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN || currentStatus == TaskStatus.REWORK_PM)) {
+                && currentStatus == TaskStatus.UNDER_REVIEW_FOREMAN) {
             // Foreman rejects -> Back to Worker (REWORK_FOREMAN)
             task.setStatus(TaskStatus.REWORK_FOREMAN);
             createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());
@@ -214,32 +214,34 @@ public class WorkflowService {
 
         } else if ((approverRole == Role.PM || approverRole == Role.SUPER_ADMIN)
                 && currentStatus == TaskStatus.UNDER_REVIEW_PM) {
-            // PM rejects -> Back to Foreman (REWORK_PM)
+            // PM rejects -> Goes directly to Worker with REWORK_PM status
+            // Worker edits and resubmits, Foreman only observes
             task.setStatus(TaskStatus.REWORK_PM);
             createApprovalRecord(task, approver, "REJECTED", approvalDto.getComment());
 
-            // Notify assignees (Workers)
+            // Notify assignees (Workers) - they need to fix
             String workerMessage = "Задача '" + task.getTitle()
-                    + "' возвращена менеджером на доработку (через прораба). Комментарий: "
+                    + "' возвращена менеджером на доработку. Комментарий: "
                     + approvalDto.getComment();
             task.getAssignees()
                     .forEach(assignee -> notificationService.createNotification(assignee, workerMessage, task));
 
-            // Notify Project Foremen
-            String message = "Задача '" + task.getTitle() + "' возвращена прорабу менеджером. Комментарий: "
+            // Notify Project Foremen - just for their awareness
+            String foremanMessage = "Задача '" + task.getTitle()
+                    + "' возвращена менеджером работнику на доработку. Комментарий: "
                     + approvalDto.getComment();
 
             Project project = task.getSubObject().getConstructionObject().getProject();
             if (project != null) {
                 Set<User> foremen = project.getForemen();
                 if (foremen != null) {
-                    foremen.forEach(foreman -> notificationService.createNotification(foreman, message, task));
+                    foremen.forEach(foreman -> notificationService.createNotification(foreman, foremanMessage, task));
                 }
             }
 
         } else {
             throw new IllegalStateException(
-                    "User " + approverEmail + " cannot reject this task at its current status.");
+                    "User " + approverPhone + " cannot reject this task at its current status.");
         }
 
         taskRepository.save(task);
@@ -260,8 +262,8 @@ public class WorkflowService {
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
     }
 
-    private User findUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    private User findUserByPhone(String phone) {
+        return userRepository.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("User not found with phone: " + phone));
     }
 }

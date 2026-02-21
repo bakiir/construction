@@ -85,6 +85,10 @@ public class ProjectService {
             throw new IllegalArgumentException("User must have PM or SUPER_ADMIN role");
         }
 
+        if (user.getStatus() != com.example.construction.Enums.UserStatus.ACTIVE) {
+            throw new IllegalArgumentException("Cannot assign user with status: " + user.getStatus());
+        }
+
         project.setProjectManager(user);
         projectRepository.save(project);
     }
@@ -98,6 +102,10 @@ public class ProjectService {
 
         if (foreman.getRole() != Role.FOREMAN) {
             throw new IllegalArgumentException("User must have FOREMAN role");
+        }
+
+        if (foreman.getStatus() != com.example.construction.Enums.UserStatus.ACTIVE) {
+            throw new IllegalArgumentException("Cannot assign foreman with status: " + foreman.getStatus());
         }
 
         project.getForemen().add(foreman);
@@ -169,9 +177,9 @@ public class ProjectService {
     }
 
     private void validateProjectAccess(Project project) {
-        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+        String phone = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
                 .getName();
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getRole() == Role.SUPER_ADMIN)
             return;

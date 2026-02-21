@@ -8,9 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +23,7 @@ public class ReportService {
     private final FileStorageService fileStorageService;
     private final WorkflowService workflowService;
 
-    public void createReport(Long taskId, ReportCreateDto reportDto, List<MultipartFile> files, String authorEmail) {
+    public void createReport(Long taskId, ReportCreateDto reportDto, List<MultipartFile> files, String authorPhone) {
         // 1. Upload files first (I/O, slow, non-transactional)
         List<String> uploadedFileNames = new ArrayList<>();
         try {
@@ -36,7 +34,7 @@ public class ReportService {
             }
 
             // 2. Perform DB operations in separate transaction
-            saveReportToDb(taskId, reportDto, uploadedFileNames, authorEmail);
+            saveReportToDb(taskId, reportDto, uploadedFileNames, authorPhone);
 
         } catch (Exception e) {
             // 3. Compensation: Delete uploaded files if DB save fails
@@ -53,12 +51,12 @@ public class ReportService {
 
     @Transactional
     public void saveReportToDb(Long taskId, ReportCreateDto reportDto, List<String> uploadedFileNames,
-            String authorEmail) {
+            String authorPhone) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
 
-        User author = userRepository.findByEmail(authorEmail)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + authorEmail));
+        User author = userRepository.findByPhone(authorPhone)
+                .orElseThrow(() -> new RuntimeException("User not found with phone: " + authorPhone));
 
         // Validation
         if (!task.getAssignees().contains(author)) {
@@ -117,6 +115,6 @@ public class ReportService {
         report.getChecklistAnswers().addAll(newAnswers);
 
         reportRepository.save(report);
-        workflowService.submitTaskForReview(task.getId(), null, authorEmail);
+        workflowService.submitTaskForReview(task.getId(), null, authorPhone);
     }
 }

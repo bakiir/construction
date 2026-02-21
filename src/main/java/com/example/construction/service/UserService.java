@@ -3,6 +3,7 @@ package com.example.construction.service;
 import com.example.construction.dto.UserCreateDto;
 import com.example.construction.dto.UserDto;
 import com.example.construction.dto.UserUpdateDto;
+import com.example.construction.Enums.UserStatus;
 import com.example.construction.mapper.UserMapper;
 import com.example.construction.model.User;
 import com.example.construction.reposirtories.UserRepository;
@@ -22,16 +23,16 @@ public class UserService {
 
     // CREATE
     public UserDto create(UserCreateDto dto) {
-        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+        if (userRepository.findByPhone(dto.getPhone()).isPresent()) {
+            throw new RuntimeException("Phone number already exists");
         }
 
         User user = new User();
-        user.setEmail(dto.getEmail());
+        user.setPhone(dto.getPhone());
         user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         user.setFullName(dto.getFullName());
         user.setRole(dto.getRole());
-        user.setActive(true);
+        user.setStatus(UserStatus.ACTIVE);
 
         return mapper.toDto(userRepository.save(user));
     }
@@ -50,9 +51,9 @@ public class UserService {
                 .toList();
     }
 
-    public Long getUserIdByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    public Long getUserIdByPhone(String phone) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("User not found with phone: " + phone));
         return user.getId();
     }
 
@@ -61,14 +62,26 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if (dto.getPhone() != null && !dto.getPhone().isEmpty()) {
+            // Check if phone is already taken by another user
+            userRepository.findByPhone(dto.getPhone()).ifPresent(u -> {
+                if (!u.getId().equals(id))
+                    throw new RuntimeException("Phone already exists");
+            });
+            user.setPhone(dto.getPhone());
+        }
+
         if (dto.getFullName() != null)
             user.setFullName(dto.getFullName());
+
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty())
+            user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
 
         if (dto.getRole() != null)
             user.setRole(dto.getRole());
 
-        if (dto.getIsActive() != null)
-            user.setActive(dto.getIsActive());
+        if (dto.getStatus() != null)
+            user.setStatus(dto.getStatus());
 
         return mapper.toDto(userRepository.save(user));
     }
@@ -78,8 +91,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        user.setActive(false);
+        user.setStatus(UserStatus.FIRED);
         userRepository.save(user);
     }
 }
-

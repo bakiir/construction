@@ -19,42 +19,37 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthenticationManager authManager;
-    private final JwtService jwtService;
-    private final UserService userService;
+        private final AuthenticationManager authManager;
+        private final JwtService jwtService;
+        private final UserService userService;
 
-    @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
+        @PostMapping("/login")
+        public LoginResponse login(@RequestBody LoginRequest request) {
 
-        Authentication authentication =
-                authManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                request.getEmail(),
-                                request.getPassword()
-                        )
-                );
+                Authentication authentication = authManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(
+                                                request.getPhone(),
+                                                request.getPassword()));
 
-        String token = jwtService.generateToken(
-                (UserDetails) authentication.getPrincipal()
-        );
+                String token = jwtService.generateToken(
+                                (UserDetails) authentication.getPrincipal());
 
-        LoginResponse response = new LoginResponse();
-        response.setToken(token);
-        return response;
-    }
+                LoginResponse response = new LoginResponse();
+                response.setToken(token);
+                return response;
+        }
 
-    @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody UserCreateDto request) {
+        @PostMapping("/register")
+        public ResponseEntity<Void> register(@RequestBody UserCreateDto request) {
 
-         userService.create(request);
-         return ResponseEntity.status(201).build();
-    }
+                userService.create(request);
+                return ResponseEntity.status(201).build();
+        }
 
-    @GetMapping("/me")
-    public UserDto me(Authentication authentication) {
-        String email = authentication.getName();
-        Long userId = userService.getUserIdByEmail(email);
-        return userService.getById(userId);
-    }
+        @GetMapping("/me")
+        public UserDto me(Authentication authentication) {
+                String phone = authentication.getName();
+                Long userId = userService.getUserIdByPhone(phone);
+                return userService.getById(userId);
+        }
 }
-

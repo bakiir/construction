@@ -20,8 +20,8 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<List<Notification>> getUnreadNotifications(Authentication authentication) {
-        // We need to get the User ID from the email in the authentication principal
-        Long userId = userService.getUserIdByEmail(authentication.getName());
+        // We need to get the User ID from the phone in the authentication principal
+        Long userId = userService.getUserIdByPhone(authentication.getName());
         List<Notification> notifications = notificationService.getUnreadNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
@@ -36,14 +36,14 @@ public class NotificationController {
 
     @GetMapping("/all")
     public ResponseEntity<List<Notification>> getAllNotifications(Authentication authentication) {
-        Long userId = userService.getUserIdByEmail(authentication.getName());
+        Long userId = userService.getUserIdByPhone(authentication.getName());
         List<Notification> notifications = notificationService.getAllNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
 
     @PostMapping("/read-all")
     public ResponseEntity<Void> markAllAsRead(Authentication authentication) {
-        Long userId = userService.getUserIdByEmail(authentication.getName());
+        Long userId = userService.getUserIdByPhone(authentication.getName());
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
@@ -56,7 +56,7 @@ public class NotificationController {
 
     @DeleteMapping("/clear-history")
     public ResponseEntity<Void> clearHistory(Authentication authentication) {
-        Long userId = userService.getUserIdByEmail(authentication.getName());
+        Long userId = userService.getUserIdByPhone(authentication.getName());
         notificationService.deleteAllNotifications(userId);
         return ResponseEntity.ok().build();
     }

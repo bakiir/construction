@@ -34,6 +34,14 @@ public class TemplateService {
     }
 
     @Transactional
+    public SubObjectTemplate updateSubObjectTemplate(Long id, String name) {
+        SubObjectTemplate template = subObjectTemplateRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("SubObject Template not found"));
+        template.setName(name);
+        return subObjectTemplateRepository.save(template);
+    }
+
+    @Transactional
     public TaskTemplate addTaskTemplateToSubObject(Long subObjectTemplateId, String taskName, Long checklistTemplateId,
             Integer orderIndex) {
         SubObjectTemplate subObjectTemplate = subObjectTemplateRepository.findById(subObjectTemplateId)

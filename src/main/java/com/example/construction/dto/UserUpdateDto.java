@@ -1,6 +1,7 @@
 package com.example.construction.dto;
 
 import com.example.construction.Enums.Role;
+import com.example.construction.Enums.UserStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,9 +9,12 @@ import lombok.Setter;
 @Getter
 public class UserUpdateDto {
 
-    private String email;
+    private String phone;
+
+    private String password;
 
     private String fullName;
     private Role role;
-    private Boolean isActive;
+
+    private UserStatus status;
 }

@@ -78,6 +78,10 @@ public class SubObjectService {
                         throw new IllegalArgumentException("User must have WORKER role");
                 }
 
+                if (worker.getStatus() != com.example.construction.Enums.UserStatus.ACTIVE) {
+                        throw new IllegalArgumentException("Cannot assign worker with status: " + worker.getStatus());
+                }
+
                 subObject.getWorkers().add(worker);
                 subObjectRepository.save(subObject);
         }

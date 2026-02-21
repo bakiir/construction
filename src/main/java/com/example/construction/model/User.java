@@ -1,6 +1,7 @@
 package com.example.construction.model;
 
 import com.example.construction.Enums.Role;
+import com.example.construction.Enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,8 +22,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String email;
+    @Column(unique = true, nullable = true)
+    private String phone;
 
     @Column(nullable = false)
     private String passwordHash;
@@ -32,7 +33,16 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    private boolean isActive = true;
+    @Enumerated(EnumType.STRING)
+    private UserStatus status = UserStatus.ACTIVE;
+
+    public User(String phone, String passwordHash, String fullName, Role role) {
+        this.phone = phone;
+        this.passwordHash = passwordHash;
+        this.fullName = fullName;
+        this.role = role;
+        this.status = UserStatus.ACTIVE;
+    }
 
     @Column(name = "telegram_chat_id", nullable = true)
     private Long telegramChatId;

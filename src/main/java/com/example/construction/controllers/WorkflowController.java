@@ -21,8 +21,8 @@ public class WorkflowController {
             @PathVariable Long taskId,
             @RequestBody(required = false) ApprovalDto approvalDto,
             Authentication authentication) {
-        String approverEmail = authentication.getName();
-        workflowService.approveTask(taskId, approverEmail, approvalDto);
+        String approverPhone = authentication.getName();
+        workflowService.approveTask(taskId, approverPhone, approvalDto);
         return ResponseEntity.ok().build();
     }
 
@@ -32,8 +32,8 @@ public class WorkflowController {
             @PathVariable Long taskId,
             @RequestBody ApprovalDto approvalDto,
             Authentication authentication) {
-        String approverEmail = authentication.getName();
-        workflowService.rejectTask(taskId, approverEmail, approvalDto);
+        String approverPhone = authentication.getName();
+        workflowService.rejectTask(taskId, approverPhone, approvalDto);
         return ResponseEntity.ok().build();
     }
 
@@ -43,8 +43,8 @@ public class WorkflowController {
             @PathVariable Long taskId,
             @RequestBody(required = false) ApprovalDto approvalDto,
             Authentication authentication) {
-        String submitterEmail = authentication != null ? authentication.getName() : null;
-        workflowService.submitTaskForReview(taskId, approvalDto, submitterEmail);
+        String submitterPhone = authentication != null ? authentication.getName() : null;
+        workflowService.submitTaskForReview(taskId, approvalDto, submitterPhone);
         return ResponseEntity.ok().build();
     }
 }
